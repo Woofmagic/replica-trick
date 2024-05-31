@@ -1,0 +1,7 @@
+directories:
+  base_dir: .
+  extractions:
+    path: extractions
+    models:
+      path: models
+      kinematic_sets: kinematic_sets
