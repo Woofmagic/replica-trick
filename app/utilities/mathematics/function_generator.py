@@ -147,7 +147,7 @@ def tangent_function(x: float, parameter_A: float, parameter_B: float, parameter
     :param A: The amplitude of the sine wave.
 
     :param B: The frequency scaling factor.
-    
+
     :param C: The phase shift.
 
     # Returns:
@@ -159,5 +159,20 @@ def tangent_function(x: float, parameter_A: float, parameter_B: float, parameter
     except Exception as ERROR:
         return 0.
     
-def generate_random_function():
-    pass
+def generate_random_function(x_data, depth: int) -> float:
+    
+    functions = [exponential_function, logarithmic_function, sine_function, cosine_function]
+
+    result = x_data.copy()
+    
+    for iteration in range(depth):
+        func_idx = np.random.randint(0, len(functions)) 
+        function = functions[func_idx]
+        num_args = function.__code__.co_argcount 
+        print(f"> Number of arguments of {function.__name__} is {num_args}")
+        params = np.random.uniform(1, 1, size = num_args - 2)  # Generate random parameters
+        print(params)
+        result = function(result, 1, *params)  # Apply the chosen function to the result using *params
+
+    print(result)
+    return result
