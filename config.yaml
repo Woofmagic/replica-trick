@@ -1,5 +1,7 @@
 directories:
   base_dir: .
+  data:
+    path: data
   extractions:
     path: extractions
     models:

@@ -7,4 +7,4 @@ It turned out that a lot of these other repositories can all be put together.
 
 replica data sets: 
 
-These sets are obtained from original data by generating random artificial data points according to Gaussian probability distribution with a width defined by the error bar of experimental measurements.
+"These sets are obtained from original data by generating random artificial data points according to Gaussian probability distribution with a width defined by the error bar of experimental measurements."
