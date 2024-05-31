@@ -33,11 +33,20 @@ def nth_degree_polynomial(
 # Functions | Logarithm:
 def logarithmic_function(x: float, parameter_A: float, parameter_B: float):
     """
+    # Description
+    --------------
     Calculate the logarithmic function A * ln(B * x).
     
+    # Parameters
+    --------------
     :param x: The input value(s) where the function is evaluated (can be a numpy array).
+
     :param A: The scaling factor for the output.
+
     :param B: The scaling factor for the input.
+
+    # Returns
+    --------------
     :return: The result of the logarithmic function.
     """
     
@@ -50,11 +59,20 @@ def logarithmic_function(x: float, parameter_A: float, parameter_B: float):
 # Functions | Exponential:
 def exponential_function(x: float, parameter_A: float, parameter_B: float) -> float:
     """
+    # Description:
+    --------------
     Calculate the exponential function A * e^(B * x).
     
+    # Parameters:
+    --------------
     :param x: The input value(s) where the function is evaluated (can be a numpy array).
+
     :param A: The scaling factor for the output.
+
     :param B: The scaling factor for the input.
+
+    # Returns
+    --------------
     :return: The result of the exponential function.
     """
     try:
@@ -66,12 +84,22 @@ def exponential_function(x: float, parameter_A: float, parameter_B: float) -> fl
 # Functions | Sine:
 def sine_function(x: float, parameter_A: float, parameter_B: float, parameter_C: float) -> float:
     """
+    # Description:
+    --------------
     Calculate the sinusoidal function A * sin(B * x + C).
     
+    # Parameters:
+    --------------
     :param x: The input value(s) where the function is evaluated (can be a numpy array).
+
     :param A: The amplitude of the sine wave.
+
     :param B: The frequency scaling factor.
+
     :param C: The phase shift.
+
+    # Returns
+    --------------
     :return: The result of the sinusoidal function.
     """
     try:
@@ -82,12 +110,22 @@ def sine_function(x: float, parameter_A: float, parameter_B: float, parameter_C:
 # Functions | Cosine:
 def cosine_function(x: float, parameter_A: float, parameter_B: float, parameter_C: float) -> float:
     """
+    # Description:
+    --------------
     Calculate the cosine function A * cos(B * x + C).
     
+    # Parameters:
+    --------------
     :param x: The input value(s) where the function is evaluated (can be a numpy array).
+
     :param A: The amplitude of the sine wave.
+
     :param B: The frequency scaling factor.
+
     :param C: The phase shift.
+
+    # Returns:
+    --------------
     :return: The result of the cosine function.
     """
     try:
@@ -98,12 +136,22 @@ def cosine_function(x: float, parameter_A: float, parameter_B: float, parameter_
 # Functions | Tangent:
 def tangent_function(x: float, parameter_A: float, parameter_B: float, parameter_C: float) -> float:
     """
+    # Description:
+    --------------
     Calculate the sinusoidal function A * tan(B * x + C).
     
+    # Parameters:
+    --------------
     :param x: The input value(s) where the function is evaluated (can be a numpy array).
+
     :param A: The amplitude of the sine wave.
+
     :param B: The frequency scaling factor.
+    
     :param C: The phase shift.
+
+    # Returns:
+    --------------
     :return: The result of the sinusoidal function.
     """
     try:
