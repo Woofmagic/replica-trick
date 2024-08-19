@@ -59,20 +59,22 @@ class ExperimentalSetup:
         self.pure_experimental_values = self.underlying_function(self.independent_variable_values)
         self.dependent_variable_values = sample_from_numpy_normal_distribution(self.pure_experimental_values, self._EXPERIMENTAL_SMEAR_STANDARD_DEVIATION)
 
-    def plot_experimental_data(self, underlying_symbolic_function: sp.FunctionClass):
+    def plot_experimental_data(
+            self,
+            underlying_symbolic_function: sp.FunctionClass,
+            underlying_function):
         """
-        # Description
-        --------------
+        # Title: `plot_experimental_data`
+
+        ## Description:
         When a big experiment finishes, they always construct plots
         to see what is going on. Here, we construct plots using the data
         we just took.
         
-        # Parameters
-        --------------
+        ## Parameters:
         Nothing!
 
-        # Returns
-        --------------
+        ## Returns:
         Nothing!
         """
         # (1): Set up the Figure instance
@@ -96,13 +98,16 @@ class ExperimentalSetup:
             x_errorbars = [0 for item in range(len(self.dependent_variable_values))],
             color = 'red')
         
-        # (5):
+        # (5): Construct an iterable with values to plug into the underlying function for a smooth plot:
+        x_data_range = np.arange(min(self.independent_variable_values), max(self.independent_variable_values), 0.01)
+
+        # (6): Add a line plot for the underlying function:
         plot_customization.add_line_plot(
-            self.independent_variable_values, 
-            self.pure_experimental_values,
-            color = 'blue'
-        )
+            x_data_range, 
+            underlying_function(x_data_range),
+            color = 'crimson')
         
+        # (7): Show the plot for the time being:
         plt.show()
 
 
@@ -142,4 +147,4 @@ def conduct_experiment():
 
     # (7): We then conduct the experiment:
     experiment_instance.do_experiment()
-    experiment_instance.plot_experimental_data(underlying_symbolic_function)
+    experiment_instance.plot_experimental_data(underlying_symbolic_function, underlying_function)
