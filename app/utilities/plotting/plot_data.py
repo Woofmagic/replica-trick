@@ -5,8 +5,6 @@ import sympy as sp
 from app.utilities.plotting.plot_customizer import PlotCustomizer
 
 def construct_plot(x_data, y_data, analytical_form):
-    print(analytical_form)
-    print(sp.latex(analytical_form))
     
     # (1): Set up the Figure instance
     figure_instance = plt.figure(figsize = (18, 6))
@@ -22,7 +20,7 @@ def construct_plot(x_data, y_data, analytical_form):
         ylabel = r"$f(x)$")
     
     # (4): Add data to the Axes Object:
-    plot_customization.add_line_plot(
+    plot_customization.add_scatter_plot(
         x_data, 
         y_data,  
         color = 'black')

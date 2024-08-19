@@ -2,6 +2,10 @@ directories:
   base_dir: .
   data:
     path: data
+    experimental: experimental
+      path: experimental
+    analysis: analysis
+      path: analysis
   extractions:
     path: extractions
     models:
