@@ -121,7 +121,6 @@ class ExperimentalSetup:
         plt.show()
 
 
-
 def conduct_experiment():
     """
     # Description

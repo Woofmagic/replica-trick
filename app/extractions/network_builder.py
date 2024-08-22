@@ -1,3 +1,11 @@
+# (1): Native Python Libraries:
+import datetime
+
+# (2): Non-native Python Libraries:
+import matplotlib.pyplot as plt
+plt.rcParams.update(plt.rcParamsDefault)
+import tensorflow as tensorflow
+
 class NetworkBuilder:
     def __init__(self, verbose = True):
 
@@ -773,3 +781,49 @@ class NetworkBuilder:
             print(f"> [11]: Network described.")
 
         return self.tensorflow_network
+    
+class WeightsBiasesCallback(tensorflow.keras.callbacks.Callback):
+
+    def __init__(self, model):
+        super(WeightsBiasesCallback, self).__init__()
+        self.weights_biases_history = {}
+        self.model = model
+
+    def on_epoch_end(self, epoch, logs=None):
+
+        for layer_index, layer in enumerate(self.model.layers):
+
+            if isinstance(layer, tensorflow.keras.layers.Dense):
+
+                # the result of .get_weights() is a NumPy Array:
+                layer_weights = layer.get_weights()[0]
+                layer_biases = layer.get_weights()[1]
+                
+                shape_of_weights = layer_weights.shape
+                shape_of_biases = layer_biases.shape[0]
+
+                if layer_weights.ndim == 2:
+
+                    number_of_rows_weight_kernel, number_of_columns_weight_kernel = shape_of_weights
+
+                    for row in range(number_of_rows_weight_kernel):
+
+                        for column in range(number_of_columns_weight_kernel):
+
+                            weight_key = f'w^{{({layer_index})}}_{{{row}{column}}}'
+                            weight_value = layer_weights[row, column]
+                            self.weights_biases_history.setdefault(weight_key, []).append(weight_value)
+
+                else:
+
+                    for column in range(shape_of_weights):
+
+                        weight_key = f'w^{{({layer_index})}}_{{{column}}}'
+                        weight_value = layer_weights[column]
+                        self.weights_biases_history.setdefault(weight_key, []).append(weight_value)
+
+                for bias_index in range(shape_of_biases):
+
+                    bias_key = f'b^{{({layer_index})}}_{{{bias_index}}}'
+                    bias_value = layer_biases[bias_index].tolist()
+                    self.weights_biases_history.setdefault(bias_key, []).append(bias_value)

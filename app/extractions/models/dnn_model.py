@@ -10,7 +10,7 @@ from statics.model_architecture.model_hyperparameters import _HYPERPARAMETER_NUM
 from statics.model_architecture.model_hyperparameters import _HYPERPARAMETER_NUMBER_OF_NEURONS_LAYER_4
 from statics.model_architecture.model_hyperparameters import _HYPERPARAMETER_NUMBER_OF_NEURONS_LAYER_5
 
-def full_cross_section_dnn_model():
+def initialize_basic_dnn_model():
     
     try:
 
