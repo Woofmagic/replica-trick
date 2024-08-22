@@ -13,7 +13,7 @@ from app.data.experimental.experiment import conduct_experiment
 def run():
     print(f"> Now running...")
 
-    conduct_experiment()
+    x_data, y_data = conduct_experiment()
 
 
 if __name__ == "__main__":

@@ -157,3 +157,8 @@ def conduct_experiment():
     # (7): We then conduct the experiment:
     experiment_instance.do_experiment()
     experiment_instance.plot_experimental_data(underlying_symbolic_function, underlying_function)
+
+    experimental_x_data = experiment_instance.independent_variable_values
+    experimental_y_data = experiment_instance.dependent_variable_values
+
+    return experimental_x_data, experimental_y_data
