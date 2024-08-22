@@ -172,7 +172,7 @@ class PlotCustomizer:
                 color = color,
                 marker = marker,
                 linestyle = '', 
-                markersize = 1.0,
+                markersize = 3.0,
                 ecolor = 'black',
                 elinewidth = 0.5,
                 capsize = 1)

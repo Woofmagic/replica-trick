@@ -20,6 +20,10 @@ class ExperimentalSetup:
             number_of_data_points: int,
             underlying_function):
 
+        _NUMBER_OF_DATA_POINTS_RICH = 5000
+        _NUMBER_OF_DATA_POINTS_MEDIUM = 200
+        _NUMBER_OF_DATA_POINTS_SPARSE = 40
+
         self.number_of_data_points = number_of_data_points
         self.underlying_function = underlying_function
 
@@ -33,30 +37,36 @@ class ExperimentalSetup:
 
     def do_experiment(self):
         """
-        # Description
-        --------------
+        # Title: `do_experiment`
+
+        ## Description: 
         We "do" the experiment, which means we plug-and-chug
         all the given values of the independent variable $x$ into
         the underlying function $f(x)$. 
         
-        # Parameters
-        --------------
+        ## Parameters:
         Nothing!
 
-        # Returns
-        --------------
+        ## Returns:
         Nothing!
         """
 
-        equidistant_points = (self._EXPERIMENTAL_END_VALUE - self._EXPERIMENTAL_START_VALUE) / self.number_of_data_points
+        # (1): Calculate the range of the experiment:
+        experimental_range = self._EXPERIMENTAL_END_VALUE - self._EXPERIMENTAL_START_VALUE
+
+        # (2): Obtain the interval between experimentally sampled points via range/N:
+        equidistant_points = experimental_range / self.number_of_data_points
         
+        # (3): Obtain an iterable (list/array) of the explicit experimental values between the END and START values:
         self.independent_variable_values = np.arange(
             self._EXPERIMENTAL_START_VALUE,
             self._EXPERIMENTAL_END_VALUE,
-            equidistant_points
-        )
+            equidistant_points)
 
+        # (4): Perform the plug-and-chugging of x into the generated f(x) as the first step:
         self.pure_experimental_values = self.underlying_function(self.independent_variable_values)
+
+        # (5): Then, *add* the Gaussian noise on top of the "pure" f(x) value:
         self.dependent_variable_values = sample_from_numpy_normal_distribution(self.pure_experimental_values, self._EXPERIMENTAL_SMEAR_STANDARD_DEVIATION)
 
     def plot_experimental_data(
@@ -96,7 +106,7 @@ class ExperimentalSetup:
             y_data = self.dependent_variable_values,
             y_errorbars = [0 for item in range(len(self.dependent_variable_values))],
             x_errorbars = [0 for item in range(len(self.dependent_variable_values))],
-            color = 'red')
+            color = 'black')
         
         # (5): Construct an iterable with values to plug into the underlying function for a smooth plot:
         x_data_range = np.arange(min(self.independent_variable_values), max(self.independent_variable_values), 0.01)
@@ -134,7 +144,7 @@ def conduct_experiment():
     sympy_symbol_x = sp.Symbol('x')
 
     # (3): We now specify how "difficult" our underlying function will be:
-    DEPTH_PARAMETER = 2
+    DEPTH_PARAMETER = 1
 
     # (4): Next, we generate the underlying function (symbolically, in Sympy):
     underlying_symbolic_function = sympy_generate_random_function(sympy_symbol_x, DEPTH_PARAMETER)
