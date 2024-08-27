@@ -628,17 +628,17 @@ class NetworkBuilder:
                 use_ema = False,
                 ema_momentum = 0.99,
                 ema_overwrite_frequency = None,
-                jit_compile = True,
+                # jit_compile = True,
                 name='Optimizer_Adam',
             ),
             loss = keras_loss_function,
-            metrics = tensorflow.keras.metrics.MeanSquaredError(),
+            metrics = [tensorflow.keras.metrics.MeanSquaredError()],
             loss_weights = None,
             weighted_metrics = None,
             run_eagerly = None,
             steps_per_execution = None,
-            jit_compile = None,
-            pss_evaluation_shards = 0,
+            # jit_compile = None,
+            # pss_evaluation_shards = 0,
         )
             self.tensorflow_network = tensorflow_network
             return None
