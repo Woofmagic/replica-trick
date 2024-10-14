@@ -171,10 +171,20 @@ def sympy_generate_random_function(
     result = sympy_variable_x
     
     for iteration in range(depth):
+
+        # (1): Choose a random function from the list `functions`:
         function_index = np.random.randint(0, len(functions))
+
+        # (2): Ascertain the corresponding *function* from the list! 
         function = functions[function_index]
+
+        # (3): Obtain the number of arguments (mathspeak: parameters) required for each function:
         number_of_arguments_per_function = function.__code__.co_argcount
+
+        # (4): Using the number of parameters, choose them randomly from the interval [-5, 5] to parametrize the function:
         function_parameters = np.round(np.random.uniform(-5, 5, size = number_of_arguments_per_function - 2))
+
+        # (5): Obtain the result by passing in the required arguments:
         result = function(result, 1, *function_parameters)
 
     return result

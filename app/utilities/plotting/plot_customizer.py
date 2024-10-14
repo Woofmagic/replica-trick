@@ -135,8 +135,8 @@ class PlotCustomizer:
             self,
             x_data,
             y_data,
-            y_errorbars,
             x_errorbars,
+            y_errorbars,
             label: str = "",
             color = 'black',
             marker = 'o'):

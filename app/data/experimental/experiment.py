@@ -69,10 +69,7 @@ class ExperimentalSetup:
         # (5): Then, *add* the Gaussian noise on top of the "pure" f(x) value:
         self.dependent_variable_values = sample_from_numpy_normal_distribution(self.pure_experimental_values, self._EXPERIMENTAL_SMEAR_STANDARD_DEVIATION)
 
-    def plot_experimental_data(
-            self,
-            underlying_symbolic_function: sp.FunctionClass,
-            underlying_function):
+    def plot_experimental_data(self):
         """
         # Title: `plot_experimental_data`
 
@@ -96,7 +93,7 @@ class ExperimentalSetup:
         # (3): Customize the Axes Object:
         plot_customization = PlotCustomizer(
             axis_instance,
-            title = r"Function: $f(x) = {}$".format(sp.latex(underlying_symbolic_function)),
+            title = r"Experiment E1045",
             xlabel = r"$x$",
             ylabel = r"$f(x)$")
         
@@ -104,46 +101,83 @@ class ExperimentalSetup:
         plot_customization.add_errorbar_plot(
             x_data = self.independent_variable_values, 
             y_data = self.dependent_variable_values,
-            y_errorbars = [0 for item in range(len(self.dependent_variable_values))],
-            x_errorbars = [0 for item in range(len(self.dependent_variable_values))],
-            color = 'black')
+            x_errorbars = np.array([0.]),
+            y_errorbars = [self._EXPERIMENTAL_SMEAR_STANDARD_DEVIATION for item in range(len(self.dependent_variable_values))],
+            label = r'Experimental Data',
+            color = 'red')
         
-        # (5): Construct an iterable with values to plug into the underlying function for a smooth plot:
+        # (7): Show the plot for the time being:
+        figure_instance.savefig('experiment1')
+
+    def plot_underlying_function(
+            self,
+            underlying_symbolic_function: sp.FunctionClass,
+            underlying_function):
+        """
+        # Title: `plot_underlying_function`
+
+        ## Description:
+        We plot the continuous, underlying function that
+        the experiment was seeking to understand.
+        
+        ## Parameters:
+        Nothing!
+
+        ## Returns:
+        Nothing!
+        """
+
+        # (1): Set up the Figure instance
+        figure_instance = plt.figure(figsize = (18, 6))
+
+        # (2): Add an Axes Object:
+        axis_instance = figure_instance.add_subplot(1, 1, 1)
+        
+        # (3): Customize the Axes Object:
+        plot_customization = PlotCustomizer(
+            axis_instance,
+            title = r"Underlying Function: $f(x) = {}$".format(sp.latex(underlying_symbolic_function)),
+            xlabel = r"$x$",
+            ylabel = r"$f(x)$")
+        
+        # (4): Construct an iterable with values to plug into the underlying function for a smooth plot:
         x_data_range = np.arange(min(self.independent_variable_values), max(self.independent_variable_values), 0.01)
 
-        # (6): Add a line plot for the underlying function:
+        # (5): Add a line plot for the underlying function:
         plot_customization.add_line_plot(
             x_data_range, 
             underlying_function(x_data_range),
-            color = 'crimson')
+            color = 'black')
         
         # (7): Show the plot for the time being:
-        plt.show()
-
+        figure_instance.savefig('underlying_function_v2')
 
 def conduct_experiment():
     """
-    # Description
-    --------------
+    # Title: `conduct_experiment`
+
+    ## Description:
     This function actually initiates the entire "experiment." 
     
-    # Parameters
-    --------------
+    ## Parameters:
     Nothing!
 
-    # Returns
-    --------------
+    ## Returns:
     Nothing!
+
+    ## Examples:
+
+    ## Notes:
     """
 
     # (1): First, we determine how robust and serious our experiment is:
-    number_of_data_points = 50
+    number_of_data_points = 500
 
     # (2): We need to define a Sympy variable "x" that's our independent variable:
     sympy_symbol_x = sp.Symbol('x')
 
     # (3): We now specify how "difficult" our underlying function will be:
-    DEPTH_PARAMETER = 1
+    DEPTH_PARAMETER = 2
 
     # (4): Next, we generate the underlying function (symbolically, in Sympy):
     underlying_symbolic_function = sympy_generate_random_function(sympy_symbol_x, DEPTH_PARAMETER)
@@ -156,7 +190,8 @@ def conduct_experiment():
 
     # (7): We then conduct the experiment:
     experiment_instance.do_experiment()
-    experiment_instance.plot_experimental_data(underlying_symbolic_function, underlying_function)
+    experiment_instance.plot_experimental_data()
+    experiment_instance.plot_underlying_function(underlying_symbolic_function, underlying_function)
 
     experimental_x_data = experiment_instance.independent_variable_values
     experimental_y_data = experiment_instance.dependent_variable_values
