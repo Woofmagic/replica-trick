@@ -35,8 +35,10 @@ from app.extractions.replica_method import run_replica_method
 
 def run():
 
+    print(tf.version.VERSION)
+
     kinematic_set_integer = 1
-    number_of_replicas = 5
+    number_of_replicas = 100
 
     # run_replica_method(kinematic_set_integer, number_of_replicas)
 
@@ -46,18 +48,18 @@ def run():
     for replica_index in range(number_of_replicas):
 
         initializer = tf.keras.initializers.RandomUniform(
-            minval = -1.0,
-            maxval = 1.0,
+            minval = -10.0,
+            maxval = 10.0,
             seed = None)
 
         input_x_value = Input(shape = (1, ), name = 'input_layer')
         
         # (3): Define the Model Architecture:
-        x1 = Dense(256, activation = "tanh", kernel_initializer = initializer)(input_x_value)
-        x2 = Dense(256, activation = "relu", kernel_initializer = initializer)(x1)
-        x3 = Dense(256, activation = "tanh", kernel_initializer = initializer)(x2)
-        x4 = Dense(256, activation = "relu", kernel_initializer = initializer)(x3)
-        x5 = Dense(256, activation = "tanh", kernel_initializer = initializer)(x4)
+        x1 = Dense(256, activation = "sigmoid", kernel_initializer = initializer)(input_x_value)
+        x2 = Dense(256, activation = "sigmoid", kernel_initializer = initializer)(x1)
+        x3 = Dense(256, activation = "sigmoid", kernel_initializer = initializer)(x2)
+        x4 = Dense(256, activation = "sigmoid", kernel_initializer = initializer)(x3)
+        x5 = Dense(256, activation = "sigmoid", kernel_initializer = initializer)(x4)
         output_y_value = Dense(1, activation = "linear", kernel_initializer = initializer, name = 'output_y_value')(x5)
 
         # (4): Define the model as as Keras Model:
@@ -66,6 +68,12 @@ def run():
         tensorflow_network.compile(optimizer='adam',
                 loss = tf.keras.losses.MeanSquaredError(),
                 metrics = [tf.keras.metrics.MeanSquaredError()])
+        
+        tensorflow_network.summary()
+
+        start_time_in_milliseconds = datetime.datetime.now().replace(microsecond = 0)
+        
+        print(f"> Replica #{replica_index + 1} now running...")
 
         history_of_training_7 = tensorflow_network.fit(
             training_x_data_7, 
@@ -75,6 +83,15 @@ def run():
         # (3): Construct the loss plot:
         training_loss_data_7 = history_of_training_7.history['loss']
         model_predictions_7 = tensorflow_network.predict(training_x_data_7)
+
+        tensorflow_network.save(f"replica_number_{replica_index + 1}_v5.keras")
+
+        print(f"> Saved replica!" )
+        print(f"> Replica #{replica_index + 1} finished running...")
+    
+        end_time_in_milliseconds = datetime.datetime.now().replace(microsecond = 0)
+
+        print(f"> Replica job finished in {end_time_in_milliseconds - start_time_in_milliseconds}ms.")
         
         # (1): Set up the Figure instance
         figure_instance_nn_loss = plt.figure(figsize = (18, 6))
@@ -118,8 +135,84 @@ def run():
             label = r'Model Predictions',
             color = "orange")
         
-        figure_instance_nn_loss.savefig(f"loss_v{replica_index+1}_v2")
-        figure_instance_fitting.savefig(f"fitting{replica_index+1}_v2")
+        figure_instance_nn_loss.savefig(f"loss_v{replica_index+1}_v5")
+        figure_instance_fitting.savefig(f"fitting{replica_index+1}_v5")
+
+    model_paths = [os.path.join(os.getcwd(), file) for file in os.listdir(os.getcwd()) if file.endswith("v5.keras")]
+    models = [tf.keras.models.load_model(path) for path in model_paths]
+
+    print(f"> Obtained {len(models)} models!")
+
+    def predict_with_models(models, x_values):
+
+        y_mean = np.zeros(len(x_values))
+        y_min = np.full(len(x_values), fill_value = np.inf)
+        y_max = np.full(len(x_values), fill_value = - np.inf)
+        y_q1 = np.zeros(len(x_values))
+        y_q3 = np.zeros(len(x_values))
+        all_predictions = []
+
+        for model in models:
+
+            y_prediction = model.predict(x_values).flatten()
+            all_predictions.append(y_prediction)
+            y_min = np.minimum(y_min, y_prediction)
+            y_max = np.maximum(y_max, y_prediction)
+            y_mean += y_prediction / len(models)
+
+        all_predictions = np.array(all_predictions)
+
+        y_q1 = np.percentile(all_predictions, 25, axis = 0)
+        y_q3 = np.percentile(all_predictions, 75, axis = 0)
+
+        return y_mean, y_min, y_max, y_q1, y_q3
+
+    y_mean, y_min, y_max, y_q1, y_q3 = predict_with_models(models, training_x_data_7)
+
+    # (1): Set up the Figure instance
+    figure_instance_predictions = plt.figure(figsize = (18, 6))
+
+    # (2): Add an Axes Object:
+    axis_instance_predictions = figure_instance_predictions.add_subplot(1, 1, 1)
+    
+    plot_customization_predictions = PlotCustomizer(
+        axis_instance_predictions,
+        title = r"$N = {}$".format(number_of_replicas),
+        xlabel = r"$x$",
+        ylabel = r"$f(x)$")
+    
+    plot_customization_predictions.add_line_plot(
+        x_data = training_x_data_7,
+        y_data = y_mean,
+        label = r'Replica Average',
+        color = "blue",
+        linestyle = "-")
+    
+    plot_customization_predictions.add_fill_between_plot(
+        x_data = training_x_data_7,
+        lower_y_data = y_min,
+        upper_y_data = y_max,
+        label = r'Min/Max Bound',
+        color = "lightgray",
+        alpha = 0.5)
+    
+    plot_customization_predictions.add_fill_between_plot(
+        x_data = training_x_data_7,
+        lower_y_data = y_q1,
+        upper_y_data = y_q3,
+        label = r'Q1/Q3 Bound',
+        color = "gray",
+        alpha = 0.6)
+    
+    plot_customization_predictions.add_scatter_plot(
+            x_data = training_x_data_7,
+            y_data = training_y_data_7,
+            label = r'Experimental Data',
+            color = "red",
+            markersize = 0.9)
+    
+    figure_instance_predictions.savefig(f"replica_average_data_v5")
+
 
 
 if __name__ == "__main__":

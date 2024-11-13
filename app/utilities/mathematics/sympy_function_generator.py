@@ -159,14 +159,28 @@ def sympy_tangent_function(
 def sympy_generate_random_function(
         sympy_variable_x: sp.Symbol,
         depth: int) -> float:
+    """
+    # Title:
+    `sympy_generate_random_function`
+
+    ## Description:
+    We use SymPy to generate a random function of a single variable. We generate
+    the function using the `depth` parameter that determines how many iterations of 
+    function composition we perform.
+
+    ## Arguments:
+    1. `sympy_variable_x` (sp.Symbol)
+    2. `depth` (int)
+    """
     
     functions = [
         sympy_constant_function,
-        sympy_exponential_function,
-        sympy_logarithmic_function,
-        sympy_sine_function,
+        # sympy_exponential_function,
+        # sympy_logarithmic_function,
+        # sympy_sine_function,
         sympy_cosine_function,
-        sympy_tangent_function]
+        # sympy_tangent_function
+        ]
 
     result = sympy_variable_x
     

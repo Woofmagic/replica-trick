@@ -33,7 +33,7 @@ class ExperimentalSetup:
 
         self._EXPERIMENTAL_START_VALUE = 1.
         self._EXPERIMENTAL_END_VALUE = 10.
-        self._EXPERIMENTAL_SMEAR_STANDARD_DEVIATION = 0.5
+        self._EXPERIMENTAL_SMEAR_STANDARD_DEVIATION = 0.192
 
     def do_experiment(self):
         """
@@ -107,7 +107,7 @@ class ExperimentalSetup:
             color = 'red')
         
         # (7): Show the plot for the time being:
-        figure_instance.savefig('experiment1')
+        figure_instance.savefig('experiment_v5')
 
     def plot_underlying_function(
             self,
@@ -150,7 +150,7 @@ class ExperimentalSetup:
             color = 'black')
         
         # (7): Show the plot for the time being:
-        figure_instance.savefig('underlying_function_v2')
+        figure_instance.savefig('underlying_function_v5')
 
 def conduct_experiment():
     """
@@ -171,7 +171,7 @@ def conduct_experiment():
     """
 
     # (1): First, we determine how robust and serious our experiment is:
-    number_of_data_points = 500
+    number_of_data_points = 100
 
     # (2): We need to define a Sympy variable "x" that's our independent variable:
     sympy_symbol_x = sp.Symbol('x')

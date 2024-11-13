@@ -106,7 +106,42 @@ class PlotCustomizer:
             if label:
                 self.axes_object.legend()
 
-    def add_scatter_plot(self, x_data, y_data, label: str = "", color = None, marker = 'o'):
+    def add_fill_between_plot(self, x_data, lower_y_data, upper_y_data, label: str = "", color = None, linestyle = '-', alpha = 1.0):
+        """
+        Add a line plot to the Axes object:
+        connects element-wise points of the two provided arrays.
+
+        Parameters
+        ----------
+        x_data: array_like
+            
+        lower_y_data: array_like
+
+        upper_y_data: array_like
+
+        label: str
+
+        color: str
+
+        linestyle: str
+        """
+
+        with rc_context(rc = self._custom_rc_params):
+
+            # (1): Just add the line plot:
+            self.axes_object.fill_between(
+                x_data, 
+                lower_y_data,
+                upper_y_data, 
+                label = label, 
+                color = color, 
+                linestyle = linestyle,
+                alpha = alpha)
+
+            if label:
+                self.axes_object.legend()
+
+    def add_scatter_plot(self, x_data, y_data, label: str = "", color = None, marker = 'o', markersize = None):
         """
         Add a scatter plot to the Axes object.
 
@@ -126,7 +161,13 @@ class PlotCustomizer:
         with rc_context(rc = self._custom_rc_params):
 
             # (1): Add the scatter plot:
-            self.axes_object.scatter(x_data, y_data, label = label, color = color, marker = marker)
+            self.axes_object.scatter(
+                x = x_data,
+                y = y_data,
+                s = markersize,
+                label = label,
+                color = color,
+                marker = marker)
 
             if label:
                 self.axes_object.legend()
