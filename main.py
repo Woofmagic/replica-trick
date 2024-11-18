@@ -35,10 +35,13 @@ from app.extractions.replica_method import run_replica_method
 
 def run():
 
-    print(tf.version.VERSION)
+    print(f"> Now running TensorFlow Version {tf.version.VERSION}")
 
+    # (1): Nonsense foor now
     kinematic_set_integer = 1
-    number_of_replicas = 100
+
+    # (2): The number of replicas to use.
+    number_of_replicas = 300
 
     # run_replica_method(kinematic_set_integer, number_of_replicas)
 
@@ -84,7 +87,7 @@ def run():
         training_loss_data_7 = history_of_training_7.history['loss']
         model_predictions_7 = tensorflow_network.predict(training_x_data_7)
 
-        tensorflow_network.save(f"replica_number_{replica_index + 1}_v5.keras")
+        tensorflow_network.save(f"replica_number_{replica_index + 1}_v4.keras")
 
         print(f"> Saved replica!" )
         print(f"> Replica #{replica_index + 1} finished running...")
@@ -135,10 +138,10 @@ def run():
             label = r'Model Predictions',
             color = "orange")
         
-        figure_instance_nn_loss.savefig(f"loss_v{replica_index+1}_v5")
-        figure_instance_fitting.savefig(f"fitting{replica_index+1}_v5")
+        figure_instance_nn_loss.savefig(f"loss_v{replica_index+1}_v4")
+        figure_instance_fitting.savefig(f"fitting{replica_index+1}_v4")
 
-    model_paths = [os.path.join(os.getcwd(), file) for file in os.listdir(os.getcwd()) if file.endswith("v5.keras")]
+    model_paths = [os.path.join(os.getcwd(), file) for file in os.listdir(os.getcwd()) if file.endswith("v4.keras")]
     models = [tf.keras.models.load_model(path) for path in model_paths]
 
     print(f"> Obtained {len(models)} models!")
@@ -162,12 +165,18 @@ def run():
 
         all_predictions = np.array(all_predictions)
 
-        y_q1 = np.percentile(all_predictions, 25, axis = 0)
-        y_q3 = np.percentile(all_predictions, 75, axis = 0)
+        y_percentile_10 = np.percentile(all_predictions, 10, axis = 0)
+        y_percentile_20 = np.percentile(all_predictions, 20, axis = 0)
+        y_percentile_30 = np.percentile(all_predictions, 30, axis = 0)
+        y_percentile_40 = np.percentile(all_predictions, 40, axis = 0)
+        y_percentile_60 = np.percentile(all_predictions, 50, axis = 0)
+        y_percentile_70 = np.percentile(all_predictions, 60, axis = 0)
+        y_percentile_80 = np.percentile(all_predictions, 70, axis = 0)
+        y_percentile_90 = np.percentile(all_predictions, 80, axis = 0)
 
-        return y_mean, y_min, y_max, y_q1, y_q3
+        return y_mean, y_min, y_max, y_percentile_10, y_percentile_20, y_percentile_30, y_percentile_40, y_percentile_60, y_percentile_70, y_percentile_80, y_percentile_90
 
-    y_mean, y_min, y_max, y_q1, y_q3 = predict_with_models(models, training_x_data_7)
+    y_mean, y_min, y_max, y_percentile_10, y_percentile_20, y_percentile_30, y_percentile_40, y_percentile_60, y_percentile_70, y_percentile_80, y_percentile_90 = predict_with_models(models, training_x_data_7)
 
     # (1): Set up the Figure instance
     figure_instance_predictions = plt.figure(figsize = (18, 6))
@@ -194,24 +203,49 @@ def run():
         upper_y_data = y_max,
         label = r'Min/Max Bound',
         color = "lightgray",
-        alpha = 0.5)
+        alpha = 0.2)
     
     plot_customization_predictions.add_fill_between_plot(
         x_data = training_x_data_7,
-        lower_y_data = y_q1,
-        upper_y_data = y_q3,
-        label = r'Q1/Q3 Bound',
+        lower_y_data = y_percentile_10,
+        upper_y_data = y_percentile_90,
+        label = r'10/90 Bound',
         color = "gray",
-        alpha = 0.6)
+        alpha = 0.25)
+
+    plot_customization_predictions.add_fill_between_plot(
+        x_data = training_x_data_7,
+        lower_y_data = y_percentile_20,
+        upper_y_data = y_percentile_80,
+        label = r'20/80 Bound',
+        color = "gray",
+        alpha = 0.3)
+    
+    plot_customization_predictions.add_fill_between_plot(
+        x_data = training_x_data_7,
+        lower_y_data = y_percentile_30,
+        upper_y_data = y_percentile_70,
+        label = r'30/70 Bound',
+        color = "gray",
+        alpha = 0.35)
+    
+    plot_customization_predictions.add_fill_between_plot(
+        x_data = training_x_data_7,
+        lower_y_data = y_percentile_40,
+        upper_y_data = y_percentile_60,
+        label = r'40/60 Bound',
+        color = "gray",
+        alpha = 0.4)
     
     plot_customization_predictions.add_scatter_plot(
             x_data = training_x_data_7,
             y_data = training_y_data_7,
             label = r'Experimental Data',
             color = "red",
-            markersize = 0.9)
+            marker = 'o',
+            markersize = 1.)
     
-    figure_instance_predictions.savefig(f"replica_average_data_v5")
+    figure_instance_predictions.savefig(f"replica_average_data_v4")
 
 
 

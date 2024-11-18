@@ -13,6 +13,8 @@ from app.utilities.mathematics.statistics import sample_from_numpy_normal_distri
 from app.utilities.mathematics.sympy_function_generator import sympy_lambdify_expression
 from app.utilities.mathematics.sympy_function_generator import sympy_generate_random_function
 
+from app.utilities.writing.latex_generation import generate_document
+
 class ExperimentalSetup:
 
     def __init__(
@@ -30,9 +32,10 @@ class ExperimentalSetup:
         self.independent_variable_values = np.array([])
         self.pure_experimental_values = np.array([])
         self.dependent_variable_values = np.array([])
+        self.pandas_dataframe_of_experimental_data = None
 
         self._EXPERIMENTAL_START_VALUE = 1.
-        self._EXPERIMENTAL_END_VALUE = 10.
+        self._EXPERIMENTAL_END_VALUE = 50.
         self._EXPERIMENTAL_SMEAR_STANDARD_DEVIATION = 0.192
 
     def do_experiment(self):
@@ -68,6 +71,27 @@ class ExperimentalSetup:
 
         # (5): Then, *add* the Gaussian noise on top of the "pure" f(x) value:
         self.dependent_variable_values = sample_from_numpy_normal_distribution(self.pure_experimental_values, self._EXPERIMENTAL_SMEAR_STANDARD_DEVIATION)
+
+    def write_raw_data(self):
+        """
+        
+        """
+
+        import pandas as pd
+
+        pandas_series_of_independent_variables = pd.Series(self.independent_variable_values)
+        pandas_series_of_dependent_variables = pd.Series(self.dependent_variable_values)
+
+        pandas_dataframe_of_experimental_data = pd.DataFrame(
+            {
+                r"$x$": pandas_series_of_independent_variables,
+                r"$y$": pandas_series_of_dependent_variables
+            }
+        )
+
+        pandas_dataframe_of_experimental_data.to_csv('fuck.csv')
+
+        self.pandas_dataframe_of_experimental_data = pandas_dataframe_of_experimental_data
 
     def plot_experimental_data(self):
         """
@@ -107,7 +131,7 @@ class ExperimentalSetup:
             color = 'red')
         
         # (7): Show the plot for the time being:
-        figure_instance.savefig('experiment_v5')
+        figure_instance.savefig('experiment_v4')
 
     def plot_underlying_function(
             self,
@@ -150,7 +174,7 @@ class ExperimentalSetup:
             color = 'black')
         
         # (7): Show the plot for the time being:
-        figure_instance.savefig('underlying_function_v5')
+        figure_instance.savefig('underlying_function_v4')
 
 def conduct_experiment():
     """
@@ -171,7 +195,7 @@ def conduct_experiment():
     """
 
     # (1): First, we determine how robust and serious our experiment is:
-    number_of_data_points = 100
+    number_of_data_points = 75
 
     # (2): We need to define a Sympy variable "x" that's our independent variable:
     sympy_symbol_x = sp.Symbol('x')
@@ -190,8 +214,30 @@ def conduct_experiment():
 
     # (7): We then conduct the experiment:
     experiment_instance.do_experiment()
+
+    # (8): When the experiment has finished, we write a file containing the raw data:
+    experiment_instance.write_raw_data()
+
+    # (9): Once the experiment has finished, we construct the "raw data" plot (contains uncertainty)
     experiment_instance.plot_experimental_data()
+
+    # (10): We also provide the plot that contains the "underlying function" that we're trying to probe:
     experiment_instance.plot_underlying_function(underlying_symbolic_function, underlying_function)
+
+    print(experiment_instance.pandas_dataframe_of_experimental_data.to_latex(
+        buf = None,
+        header = [r"$x$", r"$y$"],
+        index = True,
+        na_rep = "NaN",
+        escape = False,
+        column_format = "|" + "c|" * len(experiment_instance.pandas_dataframe_of_experimental_data.columns)
+
+    ))
+
+    generate_document(
+        underlying_equation = sp.latex(underlying_symbolic_function),
+        experimental_data_table = experiment_instance.pandas_dataframe_of_experimental_data.to_latex(),
+        experiment_name = "E0002")
 
     experimental_x_data = experiment_instance.independent_variable_values
     experimental_y_data = experiment_instance.dependent_variable_values

@@ -158,7 +158,7 @@ def sympy_tangent_function(
     
 def sympy_generate_random_function(
         sympy_variable_x: sp.Symbol,
-        depth: int) -> float:
+        depth: int) -> sp.Function:
     """
     # Title:
     `sympy_generate_random_function`
