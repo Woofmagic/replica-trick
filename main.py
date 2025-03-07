@@ -265,7 +265,7 @@ def run():
         figure_instance_nn_loss.savefig(f"loss_v{replica_index+1}_v{_version_number}")
         figure_instance_fitting.savefig(f"fitting{replica_index+1}_v{_version_number}")
 
-    model_paths = [os.path.join(os.getcwd(), file) for file in os.listdir(os.getcwd()) if file.endswith("v5.keras")]
+    model_paths = [os.path.join(os.getcwd(), file) for file in os.listdir(os.getcwd()) if file.endswith(f"v{_version_number}.keras")]
     models = [tf.keras.models.load_model(path) for path in model_paths]
 
     print(f"> Obtained {len(models)} models!")
@@ -375,6 +375,8 @@ def run():
     py_regressor_models.fit(training_x_data.reshape(-1, 1), y_mean)
     print(py_regressor_models.sympy())
     py_regressor_models.sympy()
+    py_regressor_models.latex()
+    py_regressor_models.latex_table()
 
 
 
