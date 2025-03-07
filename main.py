@@ -35,6 +35,8 @@ from app.extractions.replica_method import run_replica_method
 
 from pysr import PySRRegressor
 
+_version_number = 1
+
 _SEARCH_SPACE_BINARY_OPERATORS = [
     "+", "-", "*", "/", "^"
 ]
@@ -108,8 +110,50 @@ py_regressor_models = PySRRegressor(
     # (4): Another dictionary that limits the complexity per operator:
     complexity_of_operators = None)
 
+def get_next_version(base_path: str) -> str:
+    """
+    Scans the base_path (e.g., 'science/analysis/' or 'science/data/') to find the highest version_x directory,
+    then returns the next version path.
+    """
+
+    if not os.path.exists(base_path):
+        os.makedirs(base_path)  # Ensure the base path exists
+    
+    # Regex to match 'version_x' pattern
+    version_pattern = re.compile(r'version_(\d+)')
+    
+    existing_versions = []
+    for entry in os.listdir(base_path):
+        match = version_pattern.match(entry)
+        if match:
+            existing_versions.append(int(match.group(1)))
+    
+    next_version = max(existing_versions, default=-1) + 1
+    return next_version
 
 def run():
+    
+    _PATH_SCIENCE_ANALYSIS = 'science/analysis/'
+    _PATH_SCIENCE_DATA = 'science/data'
+
+    # Get next version directories
+    _version_number = get_next_version(_PATH_SCIENCE_ANALYSIS)
+
+    print(f"> Determined next analysis directory: {_version_number}")
+
+    try:
+        # tf.config.set_visible_devices([],'GPU')
+        tensorflow_found_devices = tf.config.list_physical_devices()
+
+        if len(tf.config.list_physical_devices()) != 0:
+            for device in tensorflow_found_devices:
+                print(f"> TensorFlow detected device: {device}")
+
+        else:
+            print("> TensorFlow didn't find CPUs or GPUs...")
+
+    except Exception as error:
+        print(f"> TensorFlow could not find devices due to error:\n> {error}")
 
     print(f"> Now running TensorFlow Version {tf.version.VERSION}")
 
@@ -117,8 +161,8 @@ def run():
     kinematic_set_integer = 1
 
     # (2): The number of replicas to use.
-    number_of_replicas = 5
-    EPOCHS = 500
+    number_of_replicas = 50
+    EPOCHS = 2000
 
     # run_replica_method(kinematic_set_integer, number_of_replicas)
 
@@ -145,9 +189,12 @@ def run():
         # (4): Define the model as as Keras Model:
         tensorflow_network = Model(inputs = input_x_value, outputs = output_y_value, name = "basic_function_predictor")
         
-        tensorflow_network.compile(optimizer='adam',
-                loss = tf.keras.losses.MeanSquaredError(),
-                metrics = [tf.keras.metrics.MeanSquaredError()])
+        tensorflow_network.compile(
+            optimizer='adam',
+            loss = tf.keras.losses.MeanSquaredError(),
+            metrics = [
+                tf.keras.metrics.MeanSquaredError()
+                ])
         
         tensorflow_network.summary()
 
@@ -164,7 +211,7 @@ def run():
         training_loss_data_7 = history_of_training_7.history['loss']
         model_predictions_7 = tensorflow_network.predict(training_x_data)
 
-        tensorflow_network.save(f"replica_number_{replica_index + 1}_v5.keras")
+        tensorflow_network.save(f"replica_number_{replica_index + 1}_v{_version_number}.keras")
 
         print(f"> Saved replica!" )
         print(f"> Replica #{replica_index + 1} finished running...")
@@ -215,8 +262,8 @@ def run():
             label = r'Model Predictions',
             color = "orange")
         
-        figure_instance_nn_loss.savefig(f"loss_v{replica_index+1}_v5")
-        figure_instance_fitting.savefig(f"fitting{replica_index+1}_v5")
+        figure_instance_nn_loss.savefig(f"loss_v{replica_index+1}_v{_version_number}")
+        figure_instance_fitting.savefig(f"fitting{replica_index+1}_v{_version_number}")
 
     model_paths = [os.path.join(os.getcwd(), file) for file in os.listdir(os.getcwd()) if file.endswith("v5.keras")]
     models = [tf.keras.models.load_model(path) for path in model_paths]
@@ -322,10 +369,12 @@ def run():
             marker = 'o',
             markersize = 1.)
     
-    figure_instance_predictions.savefig(f"replica_average_data_v5")
+    figure_instance_predictions.savefig(f"replica_average_data_v{_version_number}")
     plt.close()
 
-    py_regressor_models.fit(training_x_data, y_mean)
+    py_regressor_models.fit(training_x_data.reshape(-1, 1), y_mean)
+    print(py_regressor_models.sympy())
+    py_regressor_models.sympy()
 
 
 
