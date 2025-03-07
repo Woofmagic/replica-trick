@@ -7,9 +7,6 @@ import tensorflow as tf
 from tensorflow.keras.layers import Input, Concatenate, Dense, Lambda
 from tensorflow.keras.models import Model
 
-import pysr
-from pysr import PySRRegressor
-
 from app.utilities.plotting.plot_customizer import PlotCustomizer
 
 from app.extractions.network_builder import NetworkBuilder, WeightsBiasesCallback
@@ -35,6 +32,8 @@ from app.statics.model_architecture.model_hyperparameters import _DNN_VERBOSE_SE
 from app.data.experimental.experiment import conduct_experiment
 
 from app.extractions.replica_method import run_replica_method
+
+from pysr import PySRRegressor
 
 _SEARCH_SPACE_BINARY_OPERATORS = [
     "+", "-", "*", "/", "^"
@@ -109,6 +108,7 @@ py_regressor_models = PySRRegressor(
     # (4): Another dictionary that limits the complexity per operator:
     complexity_of_operators = None)
 
+
 def run():
 
     print(f"> Now running TensorFlow Version {tf.version.VERSION}")
@@ -117,7 +117,8 @@ def run():
     kinematic_set_integer = 1
 
     # (2): The number of replicas to use.
-    number_of_replicas = 20
+    number_of_replicas = 5
+    EPOCHS = 500
 
     # run_replica_method(kinematic_set_integer, number_of_replicas)
 
@@ -134,11 +135,11 @@ def run():
         input_x_value = Input(shape = (1, ), name = 'input_layer')
         
         # (3): Define the Model Architecture:
-        x1 = Dense(256, activation = "sigmoid", kernel_initializer = initializer)(input_x_value)
-        x2 = Dense(256, activation = "sigmoid", kernel_initializer = initializer)(x1)
-        x3 = Dense(256, activation = "sigmoid", kernel_initializer = initializer)(x2)
-        x4 = Dense(256, activation = "sigmoid", kernel_initializer = initializer)(x3)
-        x5 = Dense(256, activation = "sigmoid", kernel_initializer = initializer)(x4)
+        x1 = Dense(256, activation = "relu6", kernel_initializer = initializer)(input_x_value)
+        x2 = Dense(256, activation = "relu6", kernel_initializer = initializer)(x1)
+        x3 = Dense(256, activation = "relu6", kernel_initializer = initializer)(x2)
+        x4 = Dense(256, activation = "relu6", kernel_initializer = initializer)(x3)
+        x5 = Dense(256, activation = "relu6", kernel_initializer = initializer)(x4)
         output_y_value = Dense(1, activation = "linear", kernel_initializer = initializer, name = 'output_y_value')(x5)
 
         # (4): Define the model as as Keras Model:
@@ -157,7 +158,7 @@ def run():
         history_of_training_7 = tensorflow_network.fit(
             training_x_data, 
             training_y_data, 
-            epochs = 2000)
+            epochs = EPOCHS)
 
         # (3): Construct the loss plot:
         training_loss_data_7 = history_of_training_7.history['loss']
@@ -185,7 +186,7 @@ def run():
             ylabel = r"Loss (MSE)")
         
         plot_customization_nn_loss.add_line_plot(
-            x_data = np.arange(0, 2000, 1),
+            x_data = np.arange(0, EPOCHS, 1),
             y_data = training_loss_data_7,
             label = r'Training Loss',
             color = "black")
@@ -217,7 +218,7 @@ def run():
         figure_instance_nn_loss.savefig(f"loss_v{replica_index+1}_v5")
         figure_instance_fitting.savefig(f"fitting{replica_index+1}_v5")
 
-    model_paths = [os.path.join(os.getcwd(), file) for file in os.listdir(os.getcwd()) if file.endswith("v4.keras")]
+    model_paths = [os.path.join(os.getcwd(), file) for file in os.listdir(os.getcwd()) if file.endswith("v5.keras")]
     models = [tf.keras.models.load_model(path) for path in model_paths]
 
     print(f"> Obtained {len(models)} models!")
@@ -325,7 +326,8 @@ def run():
     plt.close()
 
     py_regressor_models.fit(training_x_data, y_mean)
-    py_regressor_models.sympy()
+
+
 
 if __name__ == "__main__":
     run()
