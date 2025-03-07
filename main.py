@@ -1,21 +1,13 @@
-import numpy as np
-import sympy as sp
-import matplotlib.pyplot as plt
-plt.rcParams.update(plt.rcParamsDefault)
-
-import tensorflow as tf
-from tensorflow.keras.layers import Input, Concatenate, Dense, Lambda
-from tensorflow.keras.models import Model
-
-from app.utilities.plotting.plot_customizer import PlotCustomizer
-
-from app.extractions.network_builder import NetworkBuilder, WeightsBiasesCallback
-
 # Native Library | datetime
 import datetime
 
 # Native Library | os
 import os
+
+# Native Library | re
+import re
+
+from app.utilities.plotting.plot_customizer import PlotCustomizer
 
 from app.utilities.directories.handling_directories import create_replica_directories
 from app.utilities.directories.handling_directories import create_replica_model_directories
@@ -33,6 +25,24 @@ from app.data.experimental.experiment import conduct_experiment
 
 from app.extractions.replica_method import run_replica_method
 
+# External Library | NumPy
+import numpy as np
+
+# External Library | Matplotlib
+import matplotlib.pyplot as plt
+# rcParams stuff....
+plt.rcParams.update(plt.rcParamsDefault)
+
+# External Library | TensorFlow
+import tensorflow as tf
+
+# External Library | TensorFlow | Keras | Layers | Input & Dense
+from tensorflow.keras.layers import Input, Dense
+
+# External Library | TensorFlow | Keras | Models | Model
+from tensorflow.keras.models import Model
+
+# External Library | PySR
 from pysr import PySRRegressor
 
 _version_number = 1
