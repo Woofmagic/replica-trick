@@ -35,7 +35,6 @@ def sympy_logarithmic_function(
     try:
         return parameter_A * sp.log(parameter_B * sympy_variable_x)
     except Exception as ERROR:
-        print(f"Fuck")
         return 0.
 
 # Functions | Exponential:
@@ -63,7 +62,6 @@ def sympy_exponential_function(
     try:
         return parameter_A * sp.exp(parameter_B * sympy_variable_x)
     except Exception as ERROR:
-        print(f"Fuck")
         return 0.
 
 # Functions | Sine:
