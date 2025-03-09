@@ -53,7 +53,6 @@ def logarithmic_function(x: float, parameter_A: float, parameter_B: float):
     try:
         return parameter_A * np.log(parameter_B * x)
     except Exception as ERROR:
-        print(f"Fuck")
         return 0.
 
 # Functions | Exponential:
@@ -78,7 +77,6 @@ def exponential_function(x: float, parameter_A: float, parameter_B: float) -> fl
     try:
         return parameter_A * np.exp(parameter_B * x)
     except Exception as ERROR:
-        print(f"Fuck")
         return 0.
 
 # Functions | Sine:
