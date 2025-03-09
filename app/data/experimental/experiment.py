@@ -89,7 +89,7 @@ class ExperimentalSetup:
             }
         )
 
-        pandas_dataframe_of_experimental_data.to_csv('fuck.csv')
+        pandas_dataframe_of_experimental_data.to_csv('experimental_data.csv')
 
         self.pandas_dataframe_of_experimental_data = pandas_dataframe_of_experimental_data
 
