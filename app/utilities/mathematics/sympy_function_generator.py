@@ -177,7 +177,7 @@ def sympy_generate_random_function(
         sympy_constant_function,
         sympy_exponential_function,
         # sympy_logarithmic_function,
-        sympy_sine_function,
+        # sympy_sine_function,
         sympy_cosine_function,
         # sympy_tangent_function
         ]
