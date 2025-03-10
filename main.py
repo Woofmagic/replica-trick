@@ -4,6 +4,9 @@ import datetime
 # Native Library | os
 import os
 
+# Native Library | sys
+import sys
+
 # Native Library | re
 import re
 
@@ -198,15 +201,18 @@ def run():
         input_x_value = Input(shape = (1, ), name = 'input_layer')
         
         # (3): Define the Model Architecture:
-        x1 = Dense(256, activation = "relu6", kernel_initializer = initializer)(input_x_value)
+        x1 = Dense(128, activation = "relu6", kernel_initializer = initializer)(input_x_value)
         x2 = Dense(256, activation = "relu6", kernel_initializer = initializer)(x1)
-        x3 = Dense(256, activation = "relu6", kernel_initializer = initializer)(x2)
+        x3 = Dense(512, activation = "relu6", kernel_initializer = initializer)(x2)
         x4 = Dense(256, activation = "relu6", kernel_initializer = initializer)(x3)
-        x5 = Dense(256, activation = "relu6", kernel_initializer = initializer)(x4)
+        x5 = Dense(128, activation = "relu6", kernel_initializer = initializer)(x4)
         output_y_value = Dense(1, activation = "linear", kernel_initializer = initializer, name = 'output_y_value')(x5)
 
         # (4): Define the model as as Keras Model:
-        tensorflow_network = Model(inputs = input_x_value, outputs = output_y_value, name = "basic_function_predictor")
+        tensorflow_network = Model(
+            inputs = input_x_value,
+            outputs = output_y_value,
+            name = "basic_function_predictor")
         
         tensorflow_network.compile(
             optimizer='adam',
@@ -215,24 +221,28 @@ def run():
                 tf.keras.metrics.MeanSquaredError()
                 ])
         
-        tensorflow_network.summary()
+        # tensorflow_network.summary()
 
         start_time_in_milliseconds = datetime.datetime.now().replace(microsecond = 0)
         
         print(f"> Replica #{replica_index + 1} now running...")
 
-        history_of_training_7 = tensorflow_network.fit(
-            training_x_data, 
-            training_y_data, 
+        history_of_training = tensorflow_network.fit(
+            training_x_data,
+            training_y_data,
             epochs = EPOCHS)
 
         # (3): Construct the loss plot:
-        training_loss_data_7 = history_of_training_7.history['loss']
+        training_loss_data_7 = history_of_training.history['loss']
         model_predictions_7 = tensorflow_network.predict(training_x_data)
 
-        tensorflow_network.save(f"replica_number_{replica_index + 1}_v{_version_number}.keras")
+        try:
+            tensorflow_network.save(f"replica_number_{replica_index + 1}_v{_version_number}.keras")
+            print("> Saved replica!")
+        except Exception as error:
+            print(f"> Error saving replica:\n> {error}!")
+            sys.exit(0)
 
-        print(f"> Saved replica!" )
         print(f"> Replica #{replica_index + 1} finished running...")
     
         end_time_in_milliseconds = datetime.datetime.now().replace(microsecond = 0)
@@ -269,9 +279,11 @@ def run():
             xlabel = r"x",
             ylabel = r"f(x)")
 
-        plot_customization_data_comparison.add_scatter_plot(
+        plot_customization_data_comparison.add_errorbar_plot(
             x_data = training_x_data,
             y_data = training_y_data,
+            x_errorbars = np.array([0.]),
+            y_errorbars = [self._EXPERIMENTAL_SMEAR_STANDARD_DEVIATION for item in range(len(self.dependent_variable_values))],
             label = r'Experimental Data',
             color = "red")
         
@@ -280,6 +292,14 @@ def run():
             y_data = model_predictions_7,
             label = r'Model Predictions',
             color = "orange")
+        
+        plot_customization.add_errorbar_plot(
+            x_data = self.independent_variable_values,
+            y_data = self.dependent_variable_values,
+            x_errorbars = np.array([0.]),
+            y_errorbars = [self._EXPERIMENTAL_SMEAR_STANDARD_DEVIATION for item in range(len(self.dependent_variable_values))],
+            label = r'Experimental Data',
+            color = 'red')
         
         figure_instance_nn_loss.savefig(f"loss_v{replica_index+1}_v{_version_number}")
         figure_instance_fitting.savefig(f"fitting_replica_{replica_index+1}_v{_version_number}")

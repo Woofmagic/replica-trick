@@ -7,6 +7,9 @@ import matplotlib.pyplot as plt
 # External Library | SymPy
 import sympy as sp
 
+# External Library | Pandas:
+import pandas as pd
+
 from app.utilities.plotting.plot_customizer import PlotCustomizer
 
 from app.utilities.mathematics.statistics import sample_from_numpy_normal_distribution
@@ -22,29 +25,66 @@ class ExperimentalSetup:
             experiment_name: str,
             number_of_data_points: int,
             underlying_function):
-
-        _NUMBER_OF_DATA_POINTS_RICH = 5000
-        _NUMBER_OF_DATA_POINTS_MEDIUM = 200
-        _NUMBER_OF_DATA_POINTS_SPARSE = 40
-
+        """
+        Initialize the experimental setup.
+        """
         self.experiment_name = experiment_name
-
         self.number_of_data_points = number_of_data_points
         self.underlying_function = underlying_function
+
+        self._EXPERIMENTAL_START_VALUE = 1.0
+        self._EXPERIMENTAL_END_VALUE = 50.0
+        self._BASE_SMEAR_STANDARD_DEVIATION = 0.192
+
+        self._NUMBER_OF_DATA_POINTS_RICH = 5000
+        self._NUMBER_OF_DATA_POINTS_MEDIUM = 200
+        self._NUMBER_OF_DATA_POINTS_SPARSE = 40
+        self._USING_EQUIDISTANT_POINTS = False
 
         self.independent_variable_values = np.array([])
         self.pure_experimental_values = np.array([])
         self.dependent_variable_values = np.array([])
+        self.experimental_errors = np.array([])
         self.pandas_dataframe_of_experimental_data = None
 
-        self._EXPERIMENTAL_START_VALUE = 1.
-        self._EXPERIMENTAL_END_VALUE = 50.
-        self._EXPERIMENTAL_SMEAR_STANDARD_DEVIATION = 0.192
+    def _generate_equidistant_x_values(self):
+        """
+        Generate equidistant x-values.
+        """
+        # (1): Calculate the range of the experiment:
+        experimental_range = self._EXPERIMENTAL_END_VALUE - self._EXPERIMENTAL_START_VALUE
+
+        equidistant_points = experimental_range / self.number_of_data_points
+
+        return np.sort(np.arange(
+            self._EXPERIMENTAL_START_VALUE,
+            self._EXPERIMENTAL_END_VALUE,
+            equidistant_points))
+
+    def _generate_nonuniform_x_values(self):
+        """
+        Generate x values with non-uniform spacing.
+        """
+        return np.sort(np.random.uniform(self._EXPERIMENTAL_START_VALUE, self._EXPERIMENTAL_END_VALUE, self.number_of_data_points))
+
+    def _generate_variable_errors(self, function_values):
+        """
+        Generate realistic varying errors for each data point.
+        """
+        # (1): Scale error with signal strength:
+        base_noise = np.abs(0.1 * function_values)
+
+        # (2): Compute an additional stochastic error:
+        random_component = np.random.uniform(
+            low = 0.05, 
+            high = 0.2,
+            size = len(function_values))
+
+        # (3): Compute the variable error, ensuring it's non-negative by taking a max() in positive interval:
+        return np.maximum(base_noise + random_component, 0.05)
 
     def do_experiment(self):
         """
-        # Title: `do_experiment`
-
         ## Description: 
         We "do" the experiment, which means we plug-and-chug
         all the given values of the independent variable $x$ into
@@ -57,42 +97,34 @@ class ExperimentalSetup:
         Nothing!
         """
 
-        # (1): Calculate the range of the experiment:
-        experimental_range = self._EXPERIMENTAL_END_VALUE - self._EXPERIMENTAL_START_VALUE
+        # (1): If we are using equally-spaced x-values:
+        if self._USING_EQUIDISTANT_POINTS:
 
-        # (2): Obtain the interval between experimentally sampled points via range/N:
-        equidistant_points = experimental_range / self.number_of_data_points
-        
-        # (3): Obtain an iterable (list/array) of the explicit experimental values between the END and START values:
-        self.independent_variable_values = np.arange(
-            self._EXPERIMENTAL_START_VALUE,
-            self._EXPERIMENTAL_END_VALUE,
-            equidistant_points)
+            # (3): Obtain an iterable (list/array) of the explicit experimental values between the END and START values:
+            self.independent_variable_values = self._generate_equidistant_x_values()
+
+        else:
+            self.independent_variable_values = self._generate_nonuniform_x_values()
 
         # (4): Perform the plug-and-chugging of x into the generated f(x) as the first step:
         self.pure_experimental_values = self.underlying_function(self.independent_variable_values)
 
         # (5): Then, *add* the Gaussian noise on top of the "pure" f(x) value:
-        self.dependent_variable_values = sample_from_numpy_normal_distribution(self.pure_experimental_values, self._EXPERIMENTAL_SMEAR_STANDARD_DEVIATION)
+        self.dependent_variable_values = sample_from_numpy_normal_distribution(self.pure_experimental_values, self._BASE_SMEAR_STANDARD_DEVIATION)
 
     def write_raw_data(self):
         """
-        
+        ## Description:
+        Save the generated experimental data to a CSV file.
         """
-
-        import pandas as pd
-
-        pandas_series_of_independent_variables = pd.Series(self.independent_variable_values)
-        pandas_series_of_dependent_variables = pd.Series(self.dependent_variable_values)
-
         pandas_dataframe_of_experimental_data = pd.DataFrame(
             {
-                "x": pandas_series_of_independent_variables,
-                "y": pandas_series_of_dependent_variables
+                "x": self.independent_variable_values,
+                "y": self.dependent_variable_values,
+                "y_error": self.experimental_errors
             })
 
         pandas_dataframe_of_experimental_data.to_csv(f'{self.experiment_name}_raw_data.csv')
-
         self.pandas_dataframe_of_experimental_data = pandas_dataframe_of_experimental_data
 
     def plot_experimental_data(self):
@@ -117,7 +149,7 @@ class ExperimentalSetup:
         # (3): Customize the Axes Object:
         plot_customization = PlotCustomizer(
             axis_instance,
-            title = r"E{{}} Raw Data".format(self.experiment_name),
+            title = "E{} Raw Data".format(self.experiment_name),
             xlabel = r"$x$",
             ylabel = r"$f(x)$")
         
@@ -126,7 +158,7 @@ class ExperimentalSetup:
             x_data = self.independent_variable_values,
             y_data = self.dependent_variable_values,
             x_errorbars = np.array([0.]),
-            y_errorbars = [self._EXPERIMENTAL_SMEAR_STANDARD_DEVIATION for item in range(len(self.dependent_variable_values))],
+            y_errorbars = [self._BASE_SMEAR_STANDARD_DEVIATION for item in range(len(self.dependent_variable_values))],
             label = r'Experimental Data',
             color = 'red')
         

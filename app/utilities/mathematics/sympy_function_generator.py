@@ -189,7 +189,7 @@ def sympy_generate_random_function(
     
     functions = [
         sympy_constant_function,
-        sympy_nth_degree_polynomial
+        sympy_nth_degree_polynomial,
         # sympy_exponential_function,
         # sympy_logarithmic_function,
         # sympy_sine_function,
