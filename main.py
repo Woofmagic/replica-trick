@@ -273,7 +273,7 @@ def run():
             color = "orange")
         
         figure_instance_nn_loss.savefig(f"loss_v{replica_index+1}_v{_version_number}")
-        figure_instance_fitting.savefig(f"fitting{replica_index+1}_v{_version_number}")
+        figure_instance_fitting.savefig(f"fitting_replica_{replica_index+1}_v{_version_number}")
 
     model_paths = [os.path.join(os.getcwd(), file) for file in os.listdir(os.getcwd()) if file.endswith(f"v{_version_number}.keras")]
     models = [tf.keras.models.load_model(path) for path in model_paths]
