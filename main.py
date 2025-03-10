@@ -188,7 +188,7 @@ def run():
 
     # run_replica_method(kinematic_set_integer, number_of_replicas)
 
-    training_x_data, training_y_data = conduct_experiment(_version_number)
+    training_x_data, training_y_data, y_error_data = conduct_experiment(_version_number)
 
     # (1): Begin iterating over the replicas:
     for replica_index in range(number_of_replicas):
@@ -283,23 +283,15 @@ def run():
             x_data = training_x_data,
             y_data = training_y_data,
             x_errorbars = np.array([0.]),
-            y_errorbars = [self._EXPERIMENTAL_SMEAR_STANDARD_DEVIATION for item in range(len(self.dependent_variable_values))],
+            y_errorbars = y_error_data,
             label = r'Experimental Data',
-            color = "red")
+            color = 'red')
         
         plot_customization_data_comparison.add_scatter_plot(
             x_data = training_x_data,
             y_data = model_predictions_7,
             label = r'Model Predictions',
             color = "orange")
-        
-        plot_customization.add_errorbar_plot(
-            x_data = self.independent_variable_values,
-            y_data = self.dependent_variable_values,
-            x_errorbars = np.array([0.]),
-            y_errorbars = [self._EXPERIMENTAL_SMEAR_STANDARD_DEVIATION for item in range(len(self.dependent_variable_values))],
-            label = r'Experimental Data',
-            color = 'red')
         
         figure_instance_nn_loss.savefig(f"loss_v{replica_index+1}_v{_version_number}")
         figure_instance_fitting.savefig(f"fitting_replica_{replica_index+1}_v{_version_number}")

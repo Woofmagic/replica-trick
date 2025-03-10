@@ -97,20 +97,26 @@ class ExperimentalSetup:
         Nothing!
         """
 
-        # (1): If we are using equally-spaced x-values:
+        # (1.1): If we are using equally-spaced x-values:
         if self._USING_EQUIDISTANT_POINTS:
 
-            # (3): Obtain an iterable (list/array) of the explicit experimental values between the END and START values:
+            # (1.1.1): Obtain an iterable (list/array) of the explicit experimental values between the END and START values:
             self.independent_variable_values = self._generate_equidistant_x_values()
 
+        # (1.2): If we are doing things realistically:
         else:
+
+            # (1.2.1): ...
             self.independent_variable_values = self._generate_nonuniform_x_values()
 
-        # (4): Perform the plug-and-chugging of x into the generated f(x) as the first step:
+        # (2): Perform the plug-and-chugging of x into the generated f(x) as the first step:
         self.pure_experimental_values = self.underlying_function(self.independent_variable_values)
 
+        # (3): Generate realistic error bars:
+        self.experimental_errors = self._generate_variable_errors(self.pure_experimental_values)
+
         # (5): Then, *add* the Gaussian noise on top of the "pure" f(x) value:
-        self.dependent_variable_values = sample_from_numpy_normal_distribution(self.pure_experimental_values, self._BASE_SMEAR_STANDARD_DEVIATION)
+        self.dependent_variable_values = self.pure_experimental_values + np.random.normal(0, self.experimental_errors)
 
     def write_raw_data(self):
         """
@@ -118,13 +124,13 @@ class ExperimentalSetup:
         Save the generated experimental data to a CSV file.
         """
         pandas_dataframe_of_experimental_data = pd.DataFrame(
-            {
+            data = {
                 "x": self.independent_variable_values,
                 "y": self.dependent_variable_values,
                 "y_error": self.experimental_errors
             })
 
-        pandas_dataframe_of_experimental_data.to_csv(f'{self.experiment_name}_raw_data.csv')
+        pandas_dataframe_of_experimental_data.to_csv(f'{self.experiment_name}_raw_data.csv', index_label = 'index')
         self.pandas_dataframe_of_experimental_data = pandas_dataframe_of_experimental_data
 
     def plot_experimental_data(self):
@@ -158,7 +164,7 @@ class ExperimentalSetup:
             x_data = self.independent_variable_values,
             y_data = self.dependent_variable_values,
             x_errorbars = np.array([0.]),
-            y_errorbars = [self._BASE_SMEAR_STANDARD_DEVIATION for item in range(len(self.dependent_variable_values))],
+            y_errorbars =  self.experimental_errors,
             label = r'Experimental Data',
             color = 'red')
         
@@ -260,7 +266,7 @@ def conduct_experiment(
 
     print(experiment_instance.pandas_dataframe_of_experimental_data.to_latex(
         buf = None,
-        header = [r"$x$", r"$y$"],
+        header = [r"$x$", r"$y$", r"$\sigma_{y}$"],
         index = True,
         na_rep = "NaN",
         escape = False,
@@ -275,5 +281,6 @@ def conduct_experiment(
 
     experimental_x_data = experiment_instance.independent_variable_values
     experimental_y_data = experiment_instance.dependent_variable_values
+    experimental_y_error_data = experiment_instance.experimental_errors
 
-    return experimental_x_data, experimental_y_data
+    return experimental_x_data, experimental_y_data, experimental_y_error_data
