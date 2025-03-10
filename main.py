@@ -155,6 +155,10 @@ def run():
     os.mkdir(f'{_PATH_SCIENCE_ANALYSIS}/version_{_version_number}/plots')
     os.mkdir(f'{_PATH_SCIENCE_ANALYSIS}/version_{_version_number}/sr_analysis')
 
+    os.mkdir(f'{_PATH_SCIENCE_DATA}/version_{_version_number}/losses')
+    os.mkdir(f'{_PATH_SCIENCE_DATA}/version_{_version_number}/raw')
+    os.mkdir(f'{_PATH_SCIENCE_DATA}/version_{_version_number}/replicas')
+
     try:
         # tf.config.set_visible_devices([],'GPU')
         tensorflow_found_devices = tf.config.list_physical_devices()
