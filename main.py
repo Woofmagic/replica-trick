@@ -133,6 +133,7 @@ def get_next_version(base_path: str) -> str:
     version_pattern = re.compile(r'version_(\d+)')
     
     existing_versions = []
+    print(os.listdir(base_path))
     for entry in os.listdir(base_path):
         match = version_pattern.match(entry)
         if match:
@@ -143,8 +144,8 @@ def get_next_version(base_path: str) -> str:
 
 def run():
     
-    _PATH_SCIENCE_ANALYSIS = 'science/analysis/'
-    _PATH_SCIENCE_DATA = 'science/data'
+    _PATH_SCIENCE_ANALYSIS = 'app/science/analysis/'
+    _PATH_SCIENCE_DATA = 'app/science/data'
 
     # Get next version directories
     _version_number = get_next_version(_PATH_SCIENCE_ANALYSIS)
@@ -184,7 +185,7 @@ def run():
 
     # run_replica_method(kinematic_set_integer, number_of_replicas)
 
-    training_x_data, training_y_data = conduct_experiment()
+    training_x_data, training_y_data = conduct_experiment(_version_number)
 
     # (1): Begin iterating over the replicas:
     for replica_index in range(number_of_replicas):

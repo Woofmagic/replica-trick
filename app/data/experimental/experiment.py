@@ -219,7 +219,7 @@ def conduct_experiment(
     experiment_instance.write_raw_data()
 
     # (9): Once the experiment has finished, we construct the "raw data" plot (contains uncertainty)
-    experiment_instance.plot_experimental_data(experiment_name)
+    experiment_instance.plot_experimental_data()
 
     # (10): We also provide the plot that contains the "underlying function" that we're trying to probe:
     experiment_instance.plot_underlying_function(
