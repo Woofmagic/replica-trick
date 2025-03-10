@@ -117,7 +117,7 @@ class ExperimentalSetup:
         # (3): Customize the Axes Object:
         plot_customization = PlotCustomizer(
             axis_instance,
-            title = r"E{{self.experiment_name}} Raw Data",
+            title = r"E{{}} Raw Data".format(self.experiment_name),
             xlabel = r"$x$",
             ylabel = r"$f(x)$")
         
@@ -192,13 +192,13 @@ def conduct_experiment(
     """
 
     # (1): First, we determine how robust and serious our experiment is:
-    number_of_data_points = 45
+    number_of_data_points = 30
 
     # (2): We need to define a Sympy variable "x" that's our independent variable:
     sympy_symbol_x = sp.Symbol('x')
 
     # (3): We now specify how "difficult" our underlying function will be:
-    DEPTH_PARAMETER = 3
+    DEPTH_PARAMETER = 2
 
     # (4): Next, we generate the underlying function (symbolically, in Sympy):
     underlying_symbolic_function = sympy_generate_random_function(sympy_symbol_x, DEPTH_PARAMETER)
@@ -209,7 +209,7 @@ def conduct_experiment(
     # (6): Finally, we set up the Experiment:
     experiment_instance = ExperimentalSetup(
         experiment_name,
-        number_of_data_points, 
+        number_of_data_points,
         underlying_function)
 
     # (7): We then conduct the experiment:
