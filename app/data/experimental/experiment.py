@@ -36,6 +36,15 @@ class ExperimentalSetup:
         self._EXPERIMENTAL_END_VALUE = 50.0
         self._BASE_SMEAR_STANDARD_DEVIATION = 0.192
 
+        self._SYSTEMATIC_SHIFT_STD = 0.05  # Bias-induced shift in measurement
+        self._STOCHASTIC_NOISE_LOW = 0.09
+        self._STOCHASTIC_NOISE_HIGH = 1.02  # Random uniform noise
+
+        # Flags for systematic biases
+        self._INCREASE_ERRORS_AT_EDGES = False  # More uncertainty at edges
+        self._INCREASE_ERRORS_AT_PEAKS = False  # More uncertainty at high function values
+
+
         self._NUMBER_OF_DATA_POINTS_RICH = 5000
         self._NUMBER_OF_DATA_POINTS_MEDIUM = 200
         self._NUMBER_OF_DATA_POINTS_SPARSE = 40
@@ -67,24 +76,28 @@ class ExperimentalSetup:
         """
         return np.sort(np.random.uniform(self._EXPERIMENTAL_START_VALUE, self._EXPERIMENTAL_END_VALUE, self.number_of_data_points))
 
-    def _generate_variable_errors(self, function_values):
+    def _generate_variable_errors(self):
         """
         Generate realistic varying errors for each data point.
         """
-        # (1): Add some Gaussian noise:
-        data_with_gaussian_noise = sample_from_numpy_normal_distribution(self.pure_experimental_values, self._BASE_SMEAR_STANDARD_DEVIATION)
+        # Base noise (Gaussian component)
+        gaussian_component = np.abs(self._BASE_SMEAR_STANDARD_DEVIATION * self.pure_experimental_values)
 
-        # (2): Scale noise with signal strength:
-        # base_noise = np.abs(0.1 * data_with_gaussian_noise)
+        # Stochastic noise
+        stochastic_component = np.random.uniform(self._STOCHASTIC_NOISE_LOW, self._STOCHASTIC_NOISE_HIGH, size = len(self.pure_experimental_values))
 
-        # (3): Compute an additional stochastic error:
-        stochastic_noise = np.random.uniform(
-            low = 0.05,
-            high = 0.2,
-            size = len(data_with_gaussian_noise))
+        # Systematic increase at edges
+        if self._INCREASE_ERRORS_AT_EDGES:
+            edge_factor = np.exp(-((self.independent_variable_values - np.mean(self.independent_variable_values))**2) / 50)
+            gaussian_component += edge_factor * 0.2  # Increase error near the edges
 
-        # (3): Compute the variable error, ensuring it's non-negative by taking a max() in positive interval:
-        return np.maximum(data_with_gaussian_noise + stochastic_noise, 0.05)
+        # Systematic increase at peaks
+        if self._INCREASE_ERRORS_AT_PEAKS:
+            peak_factor = np.exp(-self.pure_experimental_values / np.max(self.pure_experimental_values + 1e-6))  # Normalize
+            gaussian_component += peak_factor * 0.15  # Increase error at high function values
+
+        # Ensure non-negative errors
+        return np.maximum(gaussian_component + stochastic_component, 0.05)
 
     def do_experiment(self):
         """
@@ -115,12 +128,17 @@ class ExperimentalSetup:
         # (2): Perform the plug-and-chugging of x into the generated f(x) as the first step:
         self.pure_experimental_values = self.underlying_function(self.independent_variable_values)
 
+        # (3): Generate systematic shift
+        systematic_shift = np.random.normal(0, self._SYSTEMATIC_SHIFT_STD, size = len(self.pure_experimental_values))
+
         # (3): Generate realistic error bars:
-        self.experimental_errors = self._generate_variable_errors(self.pure_experimental_values)
+        self.experimental_errors = self._generate_variable_errors()
 
         # (5): Then, *add* the Gaussian noise on top of the "pure" f(x) value:
-        self.dependent_variable_values = self.pure_experimental_values + np.random.normal(0, self.experimental_errors)
-
+        # self.dependent_variable_values = sample_from_numpy_normal_distribution(self.pure_experimental_values, self._BASE_SMEAR_STANDARD_DEVIATION)
+        noisy_measurements = self.pure_experimental_values + systematic_shift
+        self.dependent_variable_values = np.random.normal(noisy_measurements, self.experimental_errors)
+        
     def write_raw_data(self):
         """
         ## Description:
@@ -250,7 +268,8 @@ def conduct_experiment(
     DEPTH_PARAMETER = 2
 
     # (4): Next, we generate the underlying function (symbolically, in Sympy):
-    underlying_symbolic_function = sympy_generate_random_function(sympy_symbol_x, DEPTH_PARAMETER)
+    # underlying_symbolic_function = sympy_generate_random_function(sympy_symbol_x, DEPTH_PARAMETER)
+    underlying_symbolic_function = 0.65 * sympy_symbol_x - 0.18
 
     # (5): We obtain a "Python understandable" function of the symbolic function above:
     underlying_function = sympy_lambdify_expression(sympy_symbol_x, underlying_symbolic_function)

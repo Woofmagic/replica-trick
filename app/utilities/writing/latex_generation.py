@@ -2,6 +2,57 @@ import subprocess
 import os
 from tempfile import NamedTemporaryFile
 
+# latex_template = r"""
+#     \documentclass{{article}}
+#     \usepackage{{amsmath}}
+#     \usepackage{{slashed}}    
+#     \usepackage{{hyperref}}
+#     \usepackage{{tensor}}
+#     \usepackage{{colortbl}}
+#     \usepackage{{xcolor}}
+#     \usepackage{{booktabs}}
+
+#     \definecolor{{rowgray}}{{gray}}{{0.9}}
+#     \rowcolor{{1}}{{white}}{{rowgray}}
+
+    
+#     \begin{{document}}
+
+#     \section*{{Introduction}}
+    
+#     The \textbf{{{experiment_name}} Experiment} seeks to probe the \textbf{{Underlying Equation}} that is conjectured to represent a fancy relationship between $x$ and $y$:
+#     \begin{{equation}}
+#         \boxed{{{underlying_equation_content}}}.
+#     \end{{equation}}
+
+#     \section*{{Data Collection}}
+
+#     \subsection*{{Methodology of Data Collection}}
+
+#     The raw data of the experiment was collected first by random sampling of a uniform distribution between two fixed $x$-values that define the range of the experimental phase
+#     space. That is, for a given $x_{{1}} $ and $x_{{2}}$, we sample uniformly from
+
+#     \begin{{equation}}
+#         \boxed{{{\mathcal{{U}} \left[x_{{1}}, x_{{2}} \right]}}}
+#     \end{{equation}}
+
+#     of course subject to the condition that
+
+#     \begin{{equation}}
+#         \int_{x_{{1}}}^{x_{{2}}} dx \mathcal{{U}}\left[x_{{1}}, x_{{2}} \right] \left( x \right) = 1.
+#     \end{{equation}}
+
+#     (For this particular experiment, we sampled in the interval defined between $x_{{1}} = ???$ and $x_{{2}} = ???$.)
+
+#     \subsection*{{Raw Data Table}}
+
+#     We have obtained the following raw data:
+
+#     {experimental_data_table}
+    
+#     \end{{document}}
+# """
+
 latex_template = r"""
     \documentclass{{article}}
     \usepackage{{amsmath}}
@@ -13,14 +64,21 @@ latex_template = r"""
     \usepackage{{booktabs}}
 
     \definecolor{{rowgray}}{{gray}}{{0.9}}
-    \rowcolor{{1}}{{white}}{{rowgray}}
 
     
     \begin{{document}}
 
     \section*{{Introduction}}
     
-    The \textbf{{{experiment_name}} Experiment} seeks to probe the \textbf{{Underlying Equation}} that is conjectured to represent a fancy relationship between $x$ and $y$:
+    The 
+    \textbf{{Fancy Collaboration Name}}
+    heading Experiment
+    \textbf{{{experiment_name}}}
+    at
+    \textbf{{Cool Research Lab}}
+    seeks to probe the \textbf{{Underlying Equation}} that is conjectured to represent a
+    fancy relationship between the independent variable $x$ and the dependent variable $y$:
+
     \begin{{equation}}
         \boxed{{{underlying_equation_content}}}.
     \end{{equation}}
@@ -29,27 +87,16 @@ latex_template = r"""
 
     \subsection*{{Methodology of Data Collection}}
 
-    The raw data of the experiment was collected first by random sampling of a uniform distribution between two fixed $x$-values that define the range of the experimental phase
-    space. That is, for a given $x_{1} $ and $x_{2}$, we sample uniformly from
-
-    \begin{{equation}}
-        \boxed{{{\mathcal{U} \left[x_{1}, x_{2} \right]}}}
-    \end{{equation}}
-
-    of course subject to the condition that
-
-    \begin{{equation}}
-        \int_{x_{1}}^{x_{2}} dx \mathcal{U}\left[x_{1}, x_{2} \right] \left( x \right) = 1.
-    \end{{equation}}
-
-    (For this particular experiment, we sampled in the interval defined between $x_{1} = ???$ and $x_{2} = ???$.)
-
-    \subsection*{{Raw Data Table}}
+    \subsection*{{Presentation of Raw Data}}
 
     We have obtained the following raw data:
 
     {experimental_data_table}
-    
+
+    \section*{{Data Analysis}}
+
+    \section*{{Conclusions}}
+
     \end{{document}}
 """
 

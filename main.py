@@ -48,7 +48,8 @@ from tensorflow.keras.models import Model
 # External Library | PySR
 from pysr import PySRRegressor
 
-_version_number = 1
+# External Library | Pandas
+import pandas as pd
 
 _SEARCH_SPACE_BINARY_OPERATORS = [
     "+", "-", "*", "/", "^"
@@ -145,6 +146,61 @@ def get_next_version(base_path: str) -> str:
     next_version = max(existing_versions, default=-1) + 1
     return next_version
 
+def generate_replica_data(
+        pandas_dataframe: pd.DataFrame,
+        mean_value_column_name: str,
+        stddev_column_name: str,
+        new_column_name: str):
+    """Generates a replica dataset by sampling F within sigmaF."""
+    pseudodata_dataframe = pandas_dataframe.copy()
+
+    # Ensure error values are positive
+    pseudodata_dataframe[stddev_column_name] = np.abs(pandas_dataframe[stddev_column_name])
+
+    # Generate normally distributed F values
+    replica_cross_section_sample = np.random.normal(
+        loc = pandas_dataframe[mean_value_column_name], 
+        scale = pseudodata_dataframe[stddev_column_name])
+
+    # Prevent negative values (ensuring no infinite loops)
+    pseudodata_dataframe[mean_value_column_name] = np.maximum(replica_cross_section_sample, 0)
+
+    # Store original F values
+    pseudodata_dataframe[new_column_name] = pandas_dataframe[mean_value_column_name]
+
+    pseudodata_dataframe.to_csv(f"pseudodata_replica_data.csv")
+
+    return pseudodata_dataframe
+
+def split_data(x_data, y_data, y_error_data, split_percentage = 0.1):
+    """Splits data into training and testing sets based on a random selection of indices."""
+    test_indices = np.random.choice(
+        x_data.index,
+        size = int(len(y_data) * split_percentage),
+        replace = False)
+
+    train_X = x_data.loc[~x_data.index.isin(test_indices)]
+    test_X = x_data.loc[test_indices]
+
+    train_y = y_data.loc[~y_data.index.isin(test_indices)]
+    test_y = y_data.loc[test_indices]
+
+    train_yerr = y_error_data.loc[~y_error_data.index.isin(test_indices)]
+    test_yerr = y_error_data.loc[test_indices]
+
+    return train_X, test_X, train_y, test_y, train_yerr, test_yerr
+
+SETTING_VERBOSE = True
+SETTING_DEBUG = True
+Learning_Rate = 0.001
+EPOCHS = 3000
+BATCH_SIZE_LOCAL_FITS = 25
+BATCH_SIZE_GLOBAL_FITS = 10
+EarlyStop_patience = 1000
+modify_LR_patience = 400
+modify_LR_factor = 0.9
+SETTING_DNN_TRAINING_VERBOSE = 1
+
 def run():
     
     _PATH_SCIENCE_ANALYSIS = 'app/science/analysis/'
@@ -187,12 +243,55 @@ def run():
     EPOCHS = 2000
 
     # run_replica_method(kinematic_set_integer, number_of_replicas)
-
-    training_x_data, training_y_data, y_error_data = conduct_experiment(_version_number)
-    print(y_error_data)
+    experimental_x_data, experimental_y_data, experimental_y_error_data = conduct_experiment(_version_number)
 
     # (1): Begin iterating over the replicas:
     for replica_index in range(number_of_replicas):
+        
+        DATA_FILE_NAME = f"E{_version_number}_raw_data.csv"
+        this_replica_data_set = pd.read_csv(DATA_FILE_NAME)
+
+        pseudodata_dataframe = generate_replica_data(
+            pandas_dataframe = this_replica_data_set,
+            mean_value_column_name = 'y',
+            stddev_column_name = 'y_error',
+            new_column_name = 'y_pseudodata')
+
+        training_x_data, testing_x_data, training_y_data, testing_y_data, training_y_error, testing_y_error = split_data(
+            x_data = pseudodata_dataframe['x'],
+            y_data = pseudodata_dataframe['y_error'],
+            y_error_data = pseudodata_dataframe['y_pseudodata'],
+            split_percentage = 0.1)
+        
+        # (1): Set up the Figure instance
+        figure_instance_pseudodata = plt.figure(figsize = (18, 6))
+
+        # (2): Add an Axes Object:
+        axis_instance_pseudodata = figure_instance_pseudodata.add_subplot(1, 1, 1)
+        
+        plot_customization_predictions = PlotCustomizer(
+            axis_instance_pseudodata,
+            title = r"Pseudodata Generation for Replica {{}}".format(replica_index + 1),
+            xlabel = r"$x$",
+            ylabel = r"$y\left(x\right)$")
+        
+        plot_customization_predictions.add_errorbar_plot(
+            x_data = this_replica_data_set['x'],
+            y_data = this_replica_data_set['y'],
+            x_errorbars = np.zeros(this_replica_data_set['x'].shape),
+            y_errorbars = this_replica_data_set['y_error'],
+            label = r'Raw Data',
+            color = "black",)
+        
+        plot_customization_predictions.add_errorbar_plot(
+            x_data = pseudodata_dataframe['x'],
+            y_data = pseudodata_dataframe['y_pseudodata'],
+            x_errorbars = np.zeros(pseudodata_dataframe['y_pseudodata'].shape),
+            y_errorbars = np.zeros(pseudodata_dataframe['y_pseudodata'].shape),
+            label = r'Generated Pseudodata',
+            color = "orange",)
+        
+        figure_instance_pseudodata.savefig(f"generated_pseudodata_replica_{replica_index + 1}_v{_version_number}.png")   
 
         initializer = tf.keras.initializers.RandomUniform(
             minval = -10.0,
@@ -202,18 +301,13 @@ def run():
         input_x_value = Input(shape = (1, ), name = 'input_layer')
         
         # (3): Define the Model Architecture:
-        x1 = Dense(2, activation = "relu6", kernel_initializer = initializer)(input_x_value)
-        x2 = Dense(4, activation = "relu6", kernel_initializer = initializer)(x1)
-        x3 = Dense(8, activation = "relu6", kernel_initializer = initializer)(x2)
-        x4 = Dense(16, activation = "relu6", kernel_initializer = initializer)(x3)
-        x5 = Dense(32, activation = "relu6", kernel_initializer = initializer)(x4)
-        x6 = Dense(64, activation = "relu6", kernel_initializer = initializer)(x5)
-        x7 = Dense(32, activation = "relu6", kernel_initializer = initializer)(x6)
-        x8 = Dense(16, activation = "relu6", kernel_initializer = initializer)(x7)
-        x9 = Dense(8, activation = "relu6", kernel_initializer = initializer)(x8)
-        x10 = Dense(4, activation = "relu6", kernel_initializer = initializer)(x9)
-        x11 = Dense(2, activation = "relu6", kernel_initializer = initializer)(x10)
-        output_y_value = Dense(1, activation = "linear", kernel_initializer = initializer, name = 'output_y_value')(x11)
+        x1 = Dense(256, activation = "relu6", kernel_initializer = initializer)(input_x_value)
+        x2 = Dense(256, activation = "relu6", kernel_initializer = initializer)(x1)
+        x3 = Dense(256, activation = "relu6", kernel_initializer = initializer)(x2)
+        x4 = Dense(256, activation = "relu6", kernel_initializer = initializer)(x3)
+        x5 = Dense(256, activation = "relu6", kernel_initializer = initializer)(x4)
+        x6 = Dense(256, activation = "relu6", kernel_initializer = initializer)(x5)
+        output_y_value = Dense(1, activation = "linear", kernel_initializer = initializer, name = 'output_y_value')(x6)
 
         # (4): Define the model as as Keras Model:
         tensorflow_network = Model(
@@ -237,10 +331,18 @@ def run():
         history_of_training = tensorflow_network.fit(
             training_x_data,
             training_y_data,
-            epochs = EPOCHS)
+            validation_data = (testing_x_data, testing_y_data),
+            epochs = EPOCHS,
+            callbacks = [
+                tf.keras.callbacks.ReduceLROnPlateau(monitor = 'loss', factor = modify_LR_factor, patience = modify_LR_patience, mode = 'auto'),
+                tf.keras.callbacks.EarlyStopping(monitor = 'loss', patience = EarlyStop_patience)
+            ],
+            batch_size = BATCH_SIZE_LOCAL_FITS,
+            verbose = SETTING_DNN_TRAINING_VERBOSE)
 
         # (3): Construct the loss plot:
-        training_loss_data_7 = history_of_training.history['loss']
+        training_loss_data = history_of_training.history['loss']
+        validation_loss_data = history_of_training.history['val_loss']
         model_predictions_7 = tensorflow_network.predict(training_x_data)
 
         try:
@@ -270,9 +372,27 @@ def run():
         
         plot_customization_nn_loss.add_line_plot(
             x_data = np.arange(0, EPOCHS, 1),
-            y_data = training_loss_data_7,
-            label = r'Training Loss',
-            color = "black")
+            y_data = np.array([np.max(training_loss_data) for number in training_loss_data]),
+            color = "red",
+            linestyle = ':')
+        
+        plot_customization_nn_loss.add_line_plot(
+            x_data = np.arange(0, EPOCHS, 1),
+            y_data = training_loss_data,
+            label = 'Training Loss',
+            color = "orange")
+        
+        plot_customization_nn_loss.add_line_plot(
+            x_data = np.arange(0, EPOCHS, 1),
+            y_data = validation_loss_data,
+            label = 'Validation Loss',
+            color = "pink")
+        
+        plot_customization_nn_loss.add_line_plot(
+            x_data = np.arange(0, EPOCHS, 1),
+            y_data = np.zeros(shape = EPOCHS),
+            color = "limegreen",
+            linestyle = ':')
         
         # (1): Set up the Figure instance
         figure_instance_fitting = plt.figure(figsize = (18, 6))
@@ -287,10 +407,10 @@ def run():
             ylabel = r"f(x)")
 
         plot_customization_data_comparison.add_errorbar_plot(
-            x_data = training_x_data,
-            y_data = training_y_data,
+            x_data = experimental_x_data,
+            y_data = experimental_y_data,
             x_errorbars = np.array([0.]),
-            y_errorbars = y_error_data,
+            y_errorbars = experimental_y_error_data,
             label = r'Experimental Data',
             color = 'red')
         
@@ -304,7 +424,7 @@ def run():
         figure_instance_nn_loss.savefig(f"{_PATH_SCIENCE_DATA}version_{_version_number}/losses/loss_v{replica_index+1}_v{_version_number}.png")
         figure_instance_fitting.savefig(f"{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/fits/fitting_replica_{replica_index+1}_v{_version_number}.png")
 
-    model_paths = [os.path.join(os.getcwd(), file) for file in os.listdir(f"{_PATH_SCIENCE_DATA}version_{_version_number}/replicas/") if file.endswith(f"v{_version_number}.keras")]
+    model_paths = [os.path.join(os.getcwd(), f"app/science/data/version_{_version_number}/replicas/{file}") for file in os.listdir(f"app/science/data/version_{_version_number}/replicas") if file.endswith(".keras")]
     models = [tf.keras.models.load_model(path) for path in model_paths]
 
     print(f"> Obtained {len(models)} models!")
@@ -411,7 +531,7 @@ def run():
     figure_instance_predictions.savefig(f"replica_average_data_v{_version_number}")
     plt.close()
 
-    py_regressor_models.fit(training_x_data.reshape(-1, 1), y_mean)
+    py_regressor_models.fit(training_x_data, y_mean)
     print(py_regressor_models.sympy())
     py_regressor_models.sympy()
     py_regressor_models.latex()
