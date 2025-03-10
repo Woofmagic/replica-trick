@@ -117,7 +117,7 @@ class ExperimentalSetup:
         # (3): Customize the Axes Object:
         plot_customization = PlotCustomizer(
             axis_instance,
-            title = r"Experiment {{self.experiment_name}}",
+            title = r"E{{self.experiment_name}} Raw Data",
             xlabel = r"$x$",
             ylabel = r"$f(x)$")
         
@@ -131,7 +131,7 @@ class ExperimentalSetup:
             color = 'red')
         
         # (7): Show the plot for the time being:
-        figure_instance.savefig(f'{self.experiment_name}_raw_data.png')
+        figure_instance.savefig(f'E{self.experiment_name}_raw_data.png')
 
     def plot_underlying_function(
             self,
@@ -172,7 +172,7 @@ class ExperimentalSetup:
             color = 'black')
         
         # (7): Show the plot for the time being:
-        figure_instance.savefig('underlying_function_v4')
+        figure_instance.savefig(f'underlying_function_E{self.experiment_name}.png')
 
 def conduct_experiment(
         experiment_name: str):
