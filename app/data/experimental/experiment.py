@@ -19,12 +19,15 @@ class ExperimentalSetup:
 
     def __init__(
             self,
+            experiment_name: str,
             number_of_data_points: int,
             underlying_function):
 
         _NUMBER_OF_DATA_POINTS_RICH = 5000
         _NUMBER_OF_DATA_POINTS_MEDIUM = 200
         _NUMBER_OF_DATA_POINTS_SPARSE = 40
+
+        self.experiment_name = experiment_name
 
         self.number_of_data_points = number_of_data_points
         self.underlying_function = underlying_function
@@ -84,19 +87,16 @@ class ExperimentalSetup:
 
         pandas_dataframe_of_experimental_data = pd.DataFrame(
             {
-                r"$x$": pandas_series_of_independent_variables,
-                r"$y$": pandas_series_of_dependent_variables
-            }
-        )
+                "x": pandas_series_of_independent_variables,
+                "y": pandas_series_of_dependent_variables
+            })
 
-        pandas_dataframe_of_experimental_data.to_csv('experimental_data.csv')
+        pandas_dataframe_of_experimental_data.to_csv(f'{self.experiment_name}_raw_data.csv')
 
         self.pandas_dataframe_of_experimental_data = pandas_dataframe_of_experimental_data
 
     def plot_experimental_data(self):
         """
-        # Title: `plot_experimental_data`
-
         ## Description:
         When a big experiment finishes, they always construct plots
         to see what is going on. Here, we construct plots using the data
@@ -117,13 +117,13 @@ class ExperimentalSetup:
         # (3): Customize the Axes Object:
         plot_customization = PlotCustomizer(
             axis_instance,
-            title = r"Experiment E1045",
+            title = r"Experiment {{self.experiment_name}}",
             xlabel = r"$x$",
             ylabel = r"$f(x)$")
         
         # (4): Add data to the Axes Object:
         plot_customization.add_errorbar_plot(
-            x_data = self.independent_variable_values, 
+            x_data = self.independent_variable_values,
             y_data = self.dependent_variable_values,
             x_errorbars = np.array([0.]),
             y_errorbars = [self._EXPERIMENTAL_SMEAR_STANDARD_DEVIATION for item in range(len(self.dependent_variable_values))],
@@ -131,15 +131,13 @@ class ExperimentalSetup:
             color = 'red')
         
         # (7): Show the plot for the time being:
-        figure_instance.savefig('experiment_v4')
+        figure_instance.savefig(f'{self.experiment_name}_raw_data.png')
 
     def plot_underlying_function(
             self,
             underlying_symbolic_function: sp.FunctionClass,
             underlying_function):
         """
-        # Title: `plot_underlying_function`
-
         ## Description:
         We plot the continuous, underlying function that
         the experiment was seeking to understand.
@@ -176,10 +174,9 @@ class ExperimentalSetup:
         # (7): Show the plot for the time being:
         figure_instance.savefig('underlying_function_v4')
 
-def conduct_experiment():
+def conduct_experiment(
+        experiment_name: str):
     """
-    # Title: `conduct_experiment`
-
     ## Description:
     This function actually initiates the entire "experiment." 
     
@@ -210,7 +207,10 @@ def conduct_experiment():
     underlying_function = sympy_lambdify_expression(sympy_symbol_x, underlying_symbolic_function)
 
     # (6): Finally, we set up the Experiment:
-    experiment_instance = ExperimentalSetup(number_of_data_points, underlying_function)
+    experiment_instance = ExperimentalSetup(
+        experiment_name,
+        number_of_data_points, 
+        underlying_function)
 
     # (7): We then conduct the experiment:
     experiment_instance.do_experiment()
@@ -219,10 +219,12 @@ def conduct_experiment():
     experiment_instance.write_raw_data()
 
     # (9): Once the experiment has finished, we construct the "raw data" plot (contains uncertainty)
-    experiment_instance.plot_experimental_data()
+    experiment_instance.plot_experimental_data(experiment_name)
 
     # (10): We also provide the plot that contains the "underlying function" that we're trying to probe:
-    experiment_instance.plot_underlying_function(underlying_symbolic_function, underlying_function)
+    experiment_instance.plot_underlying_function(
+        underlying_symbolic_function,
+        underlying_function)
 
     print(experiment_instance.pandas_dataframe_of_experimental_data.to_latex(
         buf = None,
@@ -237,7 +239,7 @@ def conduct_experiment():
     generate_document(
         underlying_equation = sp.latex(underlying_symbolic_function),
         experimental_data_table = experiment_instance.pandas_dataframe_of_experimental_data.to_latex(),
-        experiment_name = "E0002")
+        experiment_name = f"E{experiment_name}")
 
     experimental_x_data = experiment_instance.independent_variable_values
     experimental_y_data = experiment_instance.dependent_variable_values
