@@ -193,7 +193,7 @@ def sympy_generate_random_function(
         # sympy_exponential_function,
         # sympy_logarithmic_function,
         # sympy_sine_function,
-        # sympy_cosine_function,
+        sympy_cosine_function,
         # sympy_tangent_function
         ]
 
@@ -220,7 +220,7 @@ def sympy_generate_random_function(
             result = function(result, polynomial_degree, *coefficients)
         
         # (3.2): Otherwise, functions only come with finite and determined number of parameters:
-        elif:
+        else:
 
             # (3.2.1): Obtain the number of arguments (mathspeak: parameters) required for each function:
             number_of_arguments_per_function = function.__code__.co_argcount
