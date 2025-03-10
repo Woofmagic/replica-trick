@@ -145,20 +145,20 @@ def get_next_version(base_path: str) -> str:
 def run():
     
     _PATH_SCIENCE_ANALYSIS = 'app/science/analysis/'
-    _PATH_SCIENCE_DATA = 'app/science/data'
+    _PATH_SCIENCE_DATA = 'app/science/data/'
 
     # Get next version directories
     _version_number = get_next_version(_PATH_SCIENCE_ANALYSIS)
 
     print(f"> Determined next analysis directory: {_version_number}")
 
-    os.mkdir(f'{_PATH_SCIENCE_ANALYSIS}/version_{_version_number}/fits')
-    os.mkdir(f'{_PATH_SCIENCE_ANALYSIS}/version_{_version_number}/plots')
-    os.mkdir(f'{_PATH_SCIENCE_ANALYSIS}/version_{_version_number}/sr_analysis')
+    os.makedirs(f'{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/fits')
+    os.makedirs(f'{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/plots')
+    os.makedirs(f'{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/sr_analysis')
 
-    os.mkdir(f'{_PATH_SCIENCE_DATA}/version_{_version_number}/losses')
-    os.mkdir(f'{_PATH_SCIENCE_DATA}/version_{_version_number}/raw')
-    os.mkdir(f'{_PATH_SCIENCE_DATA}/version_{_version_number}/replicas')
+    os.makedirs(f'{_PATH_SCIENCE_DATA}version_{_version_number}/losses')
+    os.makedirs(f'{_PATH_SCIENCE_DATA}version_{_version_number}/raw')
+    os.makedirs(f'{_PATH_SCIENCE_DATA}version_{_version_number}/replicas')
 
     try:
         # tf.config.set_visible_devices([],'GPU')
