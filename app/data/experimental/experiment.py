@@ -71,17 +71,20 @@ class ExperimentalSetup:
         """
         Generate realistic varying errors for each data point.
         """
-        # (1): Scale error with signal strength:
-        base_noise = np.abs(0.1 * function_values)
+        # (1): Add some Gaussian noise:
+        data_with_gaussian_noise = sample_from_numpy_normal_distribution(self.pure_experimental_values, self._BASE_SMEAR_STANDARD_DEVIATION)
 
-        # (2): Compute an additional stochastic error:
-        random_component = np.random.uniform(
-            low = 0.05, 
+        # (2): Scale noise with signal strength:
+        base_noise = np.abs(0.1 * data_with_gaussian_noise)
+
+        # (3): Compute an additional stochastic error:
+        stochastic_noise = np.random.uniform(
+            low = 0.05,
             high = 0.2,
             size = len(function_values))
 
         # (3): Compute the variable error, ensuring it's non-negative by taking a max() in positive interval:
-        return np.maximum(base_noise + random_component, 0.05)
+        return np.maximum(base_noise + stochastic_noise, 0.05)
 
     def do_experiment(self):
         """
