@@ -20,23 +20,43 @@ latex_template = r"""
 
     \section*{{Introduction}}
     
-    The \textbf{{{experiment_name}}} seeks to probe the \textbf{{Underlying Equation}} that is conjectured to represent a fancy 
-    bullshit relationship between $x$ and $y$:
+    The \textbf{{{experiment_name}} Experiment} seeks to probe the \textbf{{Underlying Equation}} that is conjectured to represent a fancy relationship between $x$ and $y$:
     \begin{{equation}}
         \boxed{{{underlying_equation_content}}}.
     \end{{equation}}
 
-    \section*{{Generated Table with Alternating Colors}}
+    \section*{{Data Collection}}
+
+    \subsection*{{Methodology of Data Collection}}
+
+    The raw data of the experiment was collected first by random sampling of a uniform distribution between two fixed $x$-values that define the range of the experimental phase
+    space. That is, for a given $x_{1} $ and $x_{2}$, we sample uniformly from
+
+    \begin{{equation}}
+        \boxed{{{\mathcal{U} \left[x_{1}, x_{2} \right]}}}
+    \end{{equation}}
+
+    of course subject to the condition that
+
+    \begin{{equation}}
+        \int_{x_{1}}^{x_{2}} dx \mathcal{U}\left[x_{1}, x_{2} \right] \left( x \right) = 1.
+    \end{{equation}}
+
+    (For this particular experiment, we sampled in the interval defined between $x_{1} = ???$ and $x_{2} = ???$.)
+
+    \subsection*{{Raw Data Table}}
 
     We have obtained the following raw data:
+
     {experimental_data_table}
+    
     \end{{document}}
 """
 
 def generate_document(
         underlying_equation: str,
         experimental_data_table: str,
-        experiment_name: str = 'E0001 Experiment'):
+        experiment_name: str = 'E0001'):
 
     latex_code = latex_template.format(
         experiment_name = experiment_name,

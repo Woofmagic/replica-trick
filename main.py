@@ -183,12 +183,13 @@ def run():
     kinematic_set_integer = 1
 
     # (2): The number of replicas to use.
-    number_of_replicas = 50
+    number_of_replicas = 2
     EPOCHS = 2000
 
     # run_replica_method(kinematic_set_integer, number_of_replicas)
 
     training_x_data, training_y_data, y_error_data = conduct_experiment(_version_number)
+    print(y_error_data)
 
     # (1): Begin iterating over the replicas:
     for replica_index in range(number_of_replicas):
@@ -201,12 +202,18 @@ def run():
         input_x_value = Input(shape = (1, ), name = 'input_layer')
         
         # (3): Define the Model Architecture:
-        x1 = Dense(128, activation = "relu6", kernel_initializer = initializer)(input_x_value)
-        x2 = Dense(256, activation = "relu6", kernel_initializer = initializer)(x1)
-        x3 = Dense(512, activation = "relu6", kernel_initializer = initializer)(x2)
-        x4 = Dense(256, activation = "relu6", kernel_initializer = initializer)(x3)
-        x5 = Dense(128, activation = "relu6", kernel_initializer = initializer)(x4)
-        output_y_value = Dense(1, activation = "linear", kernel_initializer = initializer, name = 'output_y_value')(x5)
+        x1 = Dense(2, activation = "relu6", kernel_initializer = initializer)(input_x_value)
+        x2 = Dense(4, activation = "relu6", kernel_initializer = initializer)(x1)
+        x3 = Dense(8, activation = "relu6", kernel_initializer = initializer)(x2)
+        x4 = Dense(16, activation = "relu6", kernel_initializer = initializer)(x3)
+        x5 = Dense(32, activation = "relu6", kernel_initializer = initializer)(x4)
+        x6 = Dense(64, activation = "relu6", kernel_initializer = initializer)(x5)
+        x7 = Dense(32, activation = "relu6", kernel_initializer = initializer)(x6)
+        x8 = Dense(16, activation = "relu6", kernel_initializer = initializer)(x7)
+        x9 = Dense(8, activation = "relu6", kernel_initializer = initializer)(x8)
+        x10 = Dense(4, activation = "relu6", kernel_initializer = initializer)(x9)
+        x11 = Dense(2, activation = "relu6", kernel_initializer = initializer)(x10)
+        output_y_value = Dense(1, activation = "linear", kernel_initializer = initializer, name = 'output_y_value')(x11)
 
         # (4): Define the model as as Keras Model:
         tensorflow_network = Model(
@@ -237,7 +244,7 @@ def run():
         model_predictions_7 = tensorflow_network.predict(training_x_data)
 
         try:
-            tensorflow_network.save(f"replica_number_{replica_index + 1}_v{_version_number}.keras")
+            tensorflow_network.save(f"{_PATH_SCIENCE_DATA}version_{_version_number}/replicas/replica_number_{replica_index + 1}_v{_version_number}.keras")
             print("> Saved replica!")
         except Exception as error:
             print(f"> Error saving replica:\n> {error}!")
@@ -291,12 +298,13 @@ def run():
             x_data = training_x_data,
             y_data = model_predictions_7,
             label = r'Model Predictions',
-            color = "orange")
+            color = "blue",
+            markersize = 4.)
         
-        figure_instance_nn_loss.savefig(f"loss_v{replica_index+1}_v{_version_number}")
-        figure_instance_fitting.savefig(f"fitting_replica_{replica_index+1}_v{_version_number}")
+        figure_instance_nn_loss.savefig(f"{_PATH_SCIENCE_DATA}version_{_version_number}/losses/loss_v{replica_index+1}_v{_version_number}.png")
+        figure_instance_fitting.savefig(f"{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/fits/fitting_replica_{replica_index+1}_v{_version_number}.png")
 
-    model_paths = [os.path.join(os.getcwd(), file) for file in os.listdir(os.getcwd()) if file.endswith(f"v{_version_number}.keras")]
+    model_paths = [os.path.join(os.getcwd(), file) for file in os.listdir(f"{_PATH_SCIENCE_DATA}version_{_version_number}/replicas/") if file.endswith(f"v{_version_number}.keras")]
     models = [tf.keras.models.load_model(path) for path in model_paths]
 
     print(f"> Obtained {len(models)} models!")

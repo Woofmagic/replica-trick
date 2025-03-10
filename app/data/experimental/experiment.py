@@ -75,16 +75,16 @@ class ExperimentalSetup:
         data_with_gaussian_noise = sample_from_numpy_normal_distribution(self.pure_experimental_values, self._BASE_SMEAR_STANDARD_DEVIATION)
 
         # (2): Scale noise with signal strength:
-        base_noise = np.abs(0.1 * data_with_gaussian_noise)
+        # base_noise = np.abs(0.1 * data_with_gaussian_noise)
 
         # (3): Compute an additional stochastic error:
         stochastic_noise = np.random.uniform(
             low = 0.05,
             high = 0.2,
-            size = len(function_values))
+            size = len(data_with_gaussian_noise))
 
         # (3): Compute the variable error, ensuring it's non-negative by taking a max() in positive interval:
-        return np.maximum(base_noise + stochastic_noise, 0.05)
+        return np.maximum(data_with_gaussian_noise + stochastic_noise, 0.05)
 
     def do_experiment(self):
         """
@@ -133,10 +133,10 @@ class ExperimentalSetup:
                 "y_error": self.experimental_errors
             })
 
-        pandas_dataframe_of_experimental_data.to_csv(f'{self.experiment_name}_raw_data.csv', index_label = 'index')
+        pandas_dataframe_of_experimental_data.to_csv(f'E{self.experiment_name}_raw_data.csv', index_label = 'index')
         self.pandas_dataframe_of_experimental_data = pandas_dataframe_of_experimental_data
 
-    def plot_experimental_data(self):
+    def plot_experimental_data(self, underlying_function):
         """
         ## Description:
         When a big experiment finishes, they always construct plots
@@ -170,6 +170,14 @@ class ExperimentalSetup:
             y_errorbars =  self.experimental_errors,
             label = r'Experimental Data',
             color = 'red')
+        
+        # (5): Add data to the Axes Object:
+        x_data_range = np.arange(min(self.independent_variable_values), max(self.independent_variable_values), 0.01)
+        plot_customization.add_line_plot(
+            x_data_range, 
+            underlying_function(x_data_range),
+            label = 'Underlying Function',
+            color = 'gray')
         
         # (7): Show the plot for the time being:
         figure_instance.savefig(f'E{self.experiment_name}_raw_data.png')
@@ -260,26 +268,33 @@ def conduct_experiment(
     experiment_instance.write_raw_data()
 
     # (9): Once the experiment has finished, we construct the "raw data" plot (contains uncertainty)
-    experiment_instance.plot_experimental_data()
+    experiment_instance.plot_experimental_data(underlying_function)
 
     # (10): We also provide the plot that contains the "underlying function" that we're trying to probe:
     experiment_instance.plot_underlying_function(
         underlying_symbolic_function,
         underlying_function)
 
-    print(experiment_instance.pandas_dataframe_of_experimental_data.to_latex(
-        buf = None,
+    # print(experiment_instance.pandas_dataframe_of_experimental_data.to_latex(
+    #     buf = None,
+    #     header = [r"$x$", r"$y$", r"$\sigma_{y}$"],
+    #     index = True,
+    #     na_rep = "NaN",
+    #     escape = False,
+    #     column_format = "|" + "c|" * len(experiment_instance.pandas_dataframe_of_experimental_data.columns)
+
+    # ))
+
+    generate_document(
+        underlying_equation = sp.latex(underlying_symbolic_function),
+        experimental_data_table = experiment_instance.pandas_dataframe_of_experimental_data.to_latex(
+            buf = None,
         header = [r"$x$", r"$y$", r"$\sigma_{y}$"],
         index = True,
         na_rep = "NaN",
         escape = False,
         column_format = "|" + "c|" * len(experiment_instance.pandas_dataframe_of_experimental_data.columns)
-
-    ))
-
-    generate_document(
-        underlying_equation = sp.latex(underlying_symbolic_function),
-        experimental_data_table = experiment_instance.pandas_dataframe_of_experimental_data.to_latex(),
+        ),
         experiment_name = f"E{experiment_name}")
 
     experimental_x_data = experiment_instance.independent_variable_values
