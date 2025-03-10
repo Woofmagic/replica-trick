@@ -151,6 +151,10 @@ def run():
 
     print(f"> Determined next analysis directory: {_version_number}")
 
+    os.mkdir(f'{_PATH_SCIENCE_ANALYSIS}/version_{_version_number}/fits')
+    os.mkdir(f'{_PATH_SCIENCE_ANALYSIS}/version_{_version_number}/plots')
+    os.mkdir(f'{_PATH_SCIENCE_ANALYSIS}/version_{_version_number}/sr_analysis')
+
     try:
         # tf.config.set_visible_devices([],'GPU')
         tensorflow_found_devices = tf.config.list_physical_devices()
