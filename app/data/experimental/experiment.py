@@ -32,20 +32,18 @@ class ExperimentalSetup:
         self.number_of_data_points = number_of_data_points
         self.underlying_function = underlying_function
 
-        self._EXPERIMENTAL_START_VALUE = 1.0
-        self._EXPERIMENTAL_END_VALUE = 50.0
-        self._BASE_SMEAR_STANDARD_DEVIATION = 0.192
+        self._EXPERIMENTAL_START_VALUE = -1.0
+        self._EXPERIMENTAL_END_VALUE = 1.0
+        self._BASE_SMEAR_STANDARD_DEVIATION = 0.052
 
         self._SYSTEMATIC_SHIFT_STD = 0.05  # Bias-induced shift in measurement
         self._STOCHASTIC_NOISE_LOW = 0.09
-        self._STOCHASTIC_NOISE_HIGH = 1.02  # Random uniform noise
+        self._STOCHASTIC_NOISE_HIGH = 0.14  # Random uniform noise
 
-        # Flags for systematic biases
-        self._INCREASE_ERRORS_AT_EDGES = False  # More uncertainty at edges
-        self._INCREASE_ERRORS_AT_PEAKS = False  # More uncertainty at high function values
+        self._INCREASE_ERRORS_AT_EDGES = True  # More uncertainty at edges
+        self._INCREASE_ERRORS_AT_PEAKS = True  # More uncertainty at high function values
 
-
-        self._NUMBER_OF_DATA_POINTS_RICH = 5000
+        self._NUMBER_OF_DATA_POINTS_RICH = 1000
         self._NUMBER_OF_DATA_POINTS_MEDIUM = 200
         self._NUMBER_OF_DATA_POINTS_SPARSE = 40
         self._USING_EQUIDISTANT_POINTS = False
@@ -74,30 +72,58 @@ class ExperimentalSetup:
         """
         Generate x values with non-uniform spacing.
         """
-        return np.sort(np.random.uniform(self._EXPERIMENTAL_START_VALUE, self._EXPERIMENTAL_END_VALUE, self.number_of_data_points))
-
+        return np.sort(
+            np.random.uniform(
+                low = self._EXPERIMENTAL_START_VALUE,
+                high = self._EXPERIMENTAL_END_VALUE,
+                size = self.number_of_data_points))
+    
     def _generate_variable_errors(self):
         """
         Generate realistic varying errors for each data point.
         """
-        # Base noise (Gaussian component)
+        # _ALPHA = 0.02
+        # _BETA = 0.05
+        # _GAMMA = 0.5
+
+        # sigma_y = _BETA * (self.dependent_variable_values.max() - self.dependent_variable_values.min())
+        # rand_y = np.random.normal(0, 1, len(self.dependent_variable_values))
+        # dy = sigma_y * rand_y
+        # dy = np.maximum(dy, sigma_y)
+
+        dy = np.abs(np.random.normal(self._BASE_SMEAR_STANDARD_DEVIATION, 0.))
+        return dy
+
+    def _generate_experimental_data(self):
+        """
+        Generate realistic varying errors for each data point.
+        """
+        # (1): Add a Gaussian smear to the pure (true) values --- this turns true data into "experimental data":
         gaussian_component = np.random.normal(self.pure_experimental_values, self._BASE_SMEAR_STANDARD_DEVIATION)
 
-        # Stochastic noise
+        # (2): Compute a Gaussian noise to be added on top of the experimental data:
         stochastic_component = np.random.uniform(self._STOCHASTIC_NOISE_LOW, self._STOCHASTIC_NOISE_HIGH, size = len(self.pure_experimental_values))
 
-        # Systematic increase at edges
-        if self._INCREASE_ERRORS_AT_EDGES:
-            edge_factor = np.exp(-((self.independent_variable_values - np.mean(self.independent_variable_values))**2) / 50)
-            gaussian_component += edge_factor * 0.2  # Increase error near the edges
+        # # (3): If our "detector" has problems with systematics at the edges of the experimental phase space...:
+        # if self._INCREASE_ERRORS_AT_EDGES:
 
-        # Systematic increase at peaks
-        if self._INCREASE_ERRORS_AT_PEAKS:
-            peak_factor = np.exp(-self.pure_experimental_values / np.max(self.pure_experimental_values + 1e-6))  # Normalize
-            gaussian_component += peak_factor * 0.15  # Increase error at high function values
+        #     # (3.1): 
+        #     edge_factor = np.exp(-((self.independent_variable_values - np.mean(self.independent_variable_values))**2) / 50)
+
+        #     # (3.2): Inflate the 
+        #     gaussian_component += edge_factor * 0.1 
+
+        # # (4): If our "detector" has issues with peaks of a function (resonance, etc.)...:
+        # if self._INCREASE_ERRORS_AT_PEAKS:
+
+        #     # (4.1): 
+        #     peak_factor = np.exp(-self.pure_experimental_values / np.max(self.pure_experimental_values + 1e-6))
+
+        #     # (4.2): Inflate the peak by a factor:
+        #     gaussian_component += peak_factor * 0.09
 
         # Ensure non-negative errors
-        return np.maximum(gaussian_component + stochastic_component, 0.05)
+        return gaussian_component + stochastic_component
 
     def do_experiment(self):
         """
@@ -131,13 +157,11 @@ class ExperimentalSetup:
         # (3): Generate systematic shift
         systematic_shift = np.random.normal(0, self._SYSTEMATIC_SHIFT_STD, size = len(self.pure_experimental_values))
 
-        # (3): Generate realistic error bars:
-        self.experimental_errors = self._generate_variable_errors()
+        # (4): Generate realistic experimental data:
+        self.dependent_variable_values = self._generate_experimental_data()
 
-        # (5): Then, *add* the Gaussian noise on top of the "pure" f(x) value:
-        # self.dependent_variable_values = sample_from_numpy_normal_distribution(self.pure_experimental_values, self._BASE_SMEAR_STANDARD_DEVIATION)
-        noisy_measurements = self.pure_experimental_values + systematic_shift
-        self.dependent_variable_values = np.random.normal(noisy_measurements, self.experimental_errors)
+        # (5): Generate realistic error bars:
+        self.experimental_errors = self._generate_variable_errors()
         
     def write_raw_data(self):
         """
@@ -241,14 +265,13 @@ class ExperimentalSetup:
         # (7): Show the plot for the time being:
         figure_instance.savefig(f'underlying_function_E{self.experiment_name}.png')
 
-def conduct_experiment(
-        experiment_name: str):
+def conduct_experiment(experiment_name: str):
     """
     ## Description:
     This function actually initiates the entire "experiment." 
     
     ## Parameters:
-    Nothing!
+    - experiment_name (str)
 
     ## Returns:
     Nothing!
@@ -269,7 +292,23 @@ def conduct_experiment(
 
     # (4): Next, we generate the underlying function (symbolically, in Sympy):
     # underlying_symbolic_function = sympy_generate_random_function(sympy_symbol_x, DEPTH_PARAMETER)
-    underlying_symbolic_function = 0.65 * sympy_symbol_x - 0.18
+    # # Linear:
+    # underlying_symbolic_function = 0.65 * sympy_symbol_x - 0.18
+    # # Quadratic
+    # underlying_symbolic_function = 1.02 * sympy_symbol_x**2 - 2.78 * sympy_symbol_x + 3.4
+    # # Lorentzian:
+    # underlying_symbolic_function = 1. / (sp.pi * 0.121 * (1. + ((sympy_symbol_x - (-0.117)) /  0.121)**2))
+    # # Gaussian:
+    # underlying_symbolic_function = sp.exp(- (sympy_symbol_x - 0.145)**2 / (0.214)**2) / (0.214 * sp.sqrt(2. * sp.pi))
+    # Sigmoid:
+    # a1, b1 = 2.5, 0.1  # Adjust steepness and center shift
+    # underlying_symbolic_function = 3 / (1 + sp.exp(-a1 * (sympy_symbol_x - b1)))
+    # # Bimodal Gaussian-like function:
+    # a2, b2, c2 = 2.0, -0.5, 0.5
+    # underlying_symbolic_function = a2 * (sp.exp(-((sympy_symbol_x - b2) / 0.3) ** 2) + sp.exp(-((sympy_symbol_x - c2) / 0.3) ** 2))
+    # # Cosine:
+    a3, b3 = 2.0, 0.75
+    underlying_symbolic_function = a3 * sp.cos(b3 * sp.pi * sympy_symbol_x)
 
     # (5): We obtain a "Python understandable" function of the symbolic function above:
     underlying_function = sympy_lambdify_expression(sympy_symbol_x, underlying_symbolic_function)
@@ -304,17 +343,17 @@ def conduct_experiment(
 
     # ))
 
-    generate_document(
-        underlying_equation = sp.latex(underlying_symbolic_function),
-        experimental_data_table = experiment_instance.pandas_dataframe_of_experimental_data.to_latex(
-            buf = None,
-        header = [r"$x$", r"$y$", r"$\sigma_{y}$"],
-        index = True,
-        na_rep = "NaN",
-        escape = False,
-        column_format = "|" + "c|" * len(experiment_instance.pandas_dataframe_of_experimental_data.columns)
-        ),
-        experiment_name = f"E{experiment_name}")
+    # generate_document(
+    #     underlying_equation = sp.latex(underlying_symbolic_function),
+    #     experimental_data_table = experiment_instance.pandas_dataframe_of_experimental_data.to_latex(
+    #         buf = None,
+    #     header = [r"$x$", r"$y$", r"$\sigma_{y}$"],
+    #     index = True,
+    #     na_rep = "NaN",
+    #     escape = False,
+    #     column_format = "|" + "c|" * len(experiment_instance.pandas_dataframe_of_experimental_data.columns)
+    #     ),
+    #     experiment_name = f"E{experiment_name}")
 
     experimental_x_data = experiment_instance.independent_variable_values
     experimental_y_data = experiment_instance.dependent_variable_values

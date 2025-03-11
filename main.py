@@ -151,24 +151,22 @@ def generate_replica_data(
         mean_value_column_name: str,
         stddev_column_name: str,
         new_column_name: str):
-    """Generates a replica dataset by sampling F within sigmaF."""
+    """
+        ## Description:
+        Generates a replica dataset by sampling the mean within its standard deviation.
+    """
     pseudodata_dataframe = pandas_dataframe.copy()
 
-    # Ensure error values are positive
-    pseudodata_dataframe[stddev_column_name] = np.abs(pandas_dataframe[stddev_column_name])
+    # (): Overwrites what's in the "stddev" column of the original DF:
+    pseudodata_dataframe[stddev_column_name] = pandas_dataframe[stddev_column_name]
 
     # Generate normally distributed F values
     replica_cross_section_sample = np.random.normal(
         loc = pandas_dataframe[mean_value_column_name], 
-        scale = pseudodata_dataframe[stddev_column_name])
+        scale = pandas_dataframe[stddev_column_name])
 
-    # Prevent negative values (ensuring no infinite loops)
-    pseudodata_dataframe[mean_value_column_name] = np.maximum(replica_cross_section_sample, 0)
-
-    # Store original F values
-    pseudodata_dataframe[new_column_name] = pandas_dataframe[mean_value_column_name]
-
-    pseudodata_dataframe.to_csv(f"pseudodata_replica_data.csv")
+    # (): Write a new column (mean values) on the pseudodata dataframe:
+    pseudodata_dataframe[new_column_name] = replica_cross_section_sample
 
     return pseudodata_dataframe
 
@@ -192,14 +190,16 @@ def split_data(x_data, y_data, y_error_data, split_percentage = 0.1):
 
 SETTING_VERBOSE = True
 SETTING_DEBUG = True
-Learning_Rate = 0.001
-EPOCHS = 3000
+
 BATCH_SIZE_LOCAL_FITS = 25
 BATCH_SIZE_GLOBAL_FITS = 10
-EarlyStop_patience = 1000
-modify_LR_patience = 400
-modify_LR_factor = 0.9
+EARLYSTOP_PATIENCE = 1000
+MODIFY_LR_PATIENCE = 400
+MODIFY_LR_FACTOR = 0.9
 SETTING_DNN_TRAINING_VERBOSE = 1
+
+NUMBER_OF_REPLICAS = 50
+EPOCHS = 3000
 
 def run():
     
@@ -238,15 +238,11 @@ def run():
     # (1): Nonsense foor now
     kinematic_set_integer = 1
 
-    # (2): The number of replicas to use.
-    number_of_replicas = 2
-    EPOCHS = 2000
-
-    # run_replica_method(kinematic_set_integer, number_of_replicas)
+    # run_replica_method(kinematic_set_integer, NUMBER_OF_REPLICAS)
     experimental_x_data, experimental_y_data, experimental_y_error_data = conduct_experiment(_version_number)
 
     # (1): Begin iterating over the replicas:
-    for replica_index in range(number_of_replicas):
+    for replica_index in range(NUMBER_OF_REPLICAS):
         
         DATA_FILE_NAME = f"E{_version_number}_raw_data.csv"
         this_replica_data_set = pd.read_csv(DATA_FILE_NAME)
@@ -256,6 +252,10 @@ def run():
             mean_value_column_name = 'y',
             stddev_column_name = 'y_error',
             new_column_name = 'y_pseudodata')
+        
+        pseudodata_dataframe.to_csv(
+            path_or_buf = f"pseudodata_replica_{replica_index+1}_data_v{_version_number}.csv",
+            index_label = None)
 
         training_x_data, testing_x_data, training_y_data, testing_y_data, training_y_error, testing_y_error = split_data(
             x_data = pseudodata_dataframe['x'],
@@ -271,7 +271,7 @@ def run():
         
         plot_customization_predictions = PlotCustomizer(
             axis_instance_pseudodata,
-            title = r"Pseudodata Generation for Replica {{}}".format(replica_index + 1),
+            title = r"Pseudodata Generation for Replica {}".format(replica_index + 1),
             xlabel = r"$x$",
             ylabel = r"$y\left(x\right)$")
         
@@ -333,17 +333,23 @@ def run():
             training_y_data,
             validation_data = (testing_x_data, testing_y_data),
             epochs = EPOCHS,
-            callbacks = [
-                tf.keras.callbacks.ReduceLROnPlateau(monitor = 'loss', factor = modify_LR_factor, patience = modify_LR_patience, mode = 'auto'),
-                tf.keras.callbacks.EarlyStopping(monitor = 'loss', patience = EarlyStop_patience)
-            ],
+            # callbacks = [
+            #     tf.keras.callbacks.ReduceLROnPlateau(
+            #         monitor = 'loss',
+            #         factor = MODIFY_LR_FACTOR,
+            #         patience = MODIFY_LR_PATIENCE,
+            #         mode = 'auto'),
+            #     tf.keras.callbacks.EarlyStopping(
+            #         monitor = 'loss',
+            #         patience = EARLYSTOP_PATIENCE)
+            # ],
             batch_size = BATCH_SIZE_LOCAL_FITS,
             verbose = SETTING_DNN_TRAINING_VERBOSE)
 
         # (3): Construct the loss plot:
         training_loss_data = history_of_training.history['loss']
         validation_loss_data = history_of_training.history['val_loss']
-        model_predictions_7 = tensorflow_network.predict(training_x_data)
+        model_predictions = tensorflow_network.predict(training_x_data)
 
         try:
             tensorflow_network.save(f"{_PATH_SCIENCE_DATA}version_{_version_number}/replicas/replica_number_{replica_index + 1}_v{_version_number}.keras")
@@ -416,7 +422,7 @@ def run():
         
         plot_customization_data_comparison.add_scatter_plot(
             x_data = training_x_data,
-            y_data = model_predictions_7,
+            y_data = model_predictions,
             label = r'Model Predictions',
             color = "blue",
             markersize = 4.)
@@ -469,7 +475,7 @@ def run():
     
     plot_customization_predictions = PlotCustomizer(
         axis_instance_predictions,
-        title = r"$N = {}$".format(number_of_replicas),
+        title = r"$N = {}$".format(NUMBER_OF_REPLICAS),
         xlabel = r"$x$",
         ylabel = r"$f(x)$")
     
