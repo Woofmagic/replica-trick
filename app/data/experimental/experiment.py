@@ -81,7 +81,7 @@ class ExperimentalSetup:
         Generate realistic varying errors for each data point.
         """
         # Base noise (Gaussian component)
-        gaussian_component = np.abs(self._BASE_SMEAR_STANDARD_DEVIATION * self.pure_experimental_values)
+        gaussian_component = np.random.normal(self.pure_experimental_values, self._BASE_SMEAR_STANDARD_DEVIATION)
 
         # Stochastic noise
         stochastic_component = np.random.uniform(self._STOCHASTIC_NOISE_LOW, self._STOCHASTIC_NOISE_HIGH, size = len(self.pure_experimental_values))
