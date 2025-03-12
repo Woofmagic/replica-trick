@@ -40,8 +40,8 @@ class ExperimentalSetup:
         self._STOCHASTIC_NOISE_LOW = 0.09
         self._STOCHASTIC_NOISE_HIGH = 0.14  # Random uniform noise
 
-        self._INCREASE_ERRORS_AT_EDGES = True  # More uncertainty at edges
-        self._INCREASE_ERRORS_AT_PEAKS = True  # More uncertainty at high function values
+        self._INCREASE_ERRORS_AT_EDGES = False  # More uncertainty at edges
+        self._INCREASE_ERRORS_AT_PEAKS = False  # More uncertainty at high function values
 
         self._NUMBER_OF_DATA_POINTS_RICH = 1000
         self._NUMBER_OF_DATA_POINTS_MEDIUM = 200
@@ -282,7 +282,7 @@ def conduct_experiment(experiment_name: str):
     """
 
     # (1): First, we determine how robust and serious our experiment is:
-    number_of_data_points = 30
+    number_of_data_points = 76
 
     # (2): We need to define a Sympy variable "x" that's our independent variable:
     sympy_symbol_x = sp.Symbol('x')
@@ -301,14 +301,14 @@ def conduct_experiment(experiment_name: str):
     # # Gaussian:
     # underlying_symbolic_function = sp.exp(- (sympy_symbol_x - 0.145)**2 / (0.214)**2) / (0.214 * sp.sqrt(2. * sp.pi))
     # Sigmoid:
-    # a1, b1 = 2.5, 0.1  # Adjust steepness and center shift
-    # underlying_symbolic_function = 3 / (1 + sp.exp(-a1 * (sympy_symbol_x - b1)))
+    a1, b1 = 2.5, 0.1  # Adjust steepness and center shift
+    underlying_symbolic_function = 3 / (1 + sp.exp(-a1 * (sympy_symbol_x - b1)))
     # # Bimodal Gaussian-like function:
     # a2, b2, c2 = 2.0, -0.5, 0.5
     # underlying_symbolic_function = a2 * (sp.exp(-((sympy_symbol_x - b2) / 0.3) ** 2) + sp.exp(-((sympy_symbol_x - c2) / 0.3) ** 2))
     # # Cosine:
-    a3, b3 = 2.0, 0.75
-    underlying_symbolic_function = a3 * sp.cos(b3 * sp.pi * sympy_symbol_x)
+    # a3, b3 = 2.0, 0.75
+    # underlying_symbolic_function = a3 * sp.cos(b3 * sp.pi * sympy_symbol_x)
 
     # (5): We obtain a "Python understandable" function of the symbolic function above:
     underlying_function = sympy_lambdify_expression(sympy_symbol_x, underlying_symbolic_function)

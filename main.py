@@ -59,7 +59,7 @@ _SEARCH_SPACE_UNARY_OPERATORS = [
    "exp", "log", "sqrt", "sin", "cos", "tan"
 ]
 
-_SEARCH_SPACE_MAXIUMUM_COMPLEXITY = 20
+_SEARCH_SPACE_MAXIUMUM_COMPLEXITY = 25
 
 _SEARCH_SPACE_MAXIMUM_DEPTH = None
 
@@ -82,13 +82,13 @@ py_regressor_models = PySRRegressor(
     # === SEARCH SIZE ===
 
     # (1): Number of iterations for the algorithm:
-    niterations = 40,
+    niterations = 1000,
 
     # (2): The number of "populations" running:
-    populations = 15,
+    populations = 500,
 
     # (3): The size of each population:
-    population_size = 33,
+    population_size = 50,
 
     # (4): Whatever the fuck this means:
     ncycles_per_iteration = 550,
@@ -112,7 +112,7 @@ py_regressor_models = PySRRegressor(
 
     # === COMPLEXITY ===
 
-    # (1): Multiplicative factor that penalizes a complex function:
+    # (1): Multiplicative factor that penalizes a complex function: l(E) = l_{loss}(E) exp(parsimony * etc.)
     parsimony = 0.0032,
 
     # (2): A complicated dictionary governing how complex a given operation can be:
@@ -198,8 +198,8 @@ MODIFY_LR_PATIENCE = 400
 MODIFY_LR_FACTOR = 0.9
 SETTING_DNN_TRAINING_VERBOSE = 1
 
-NUMBER_OF_REPLICAS = 50
-EPOCHS = 3000
+NUMBER_OF_REPLICAS = 100
+EPOCHS = 2000
 
 def run():
     
@@ -301,12 +301,12 @@ def run():
         input_x_value = Input(shape = (1, ), name = 'input_layer')
         
         # (3): Define the Model Architecture:
-        x1 = Dense(256, activation = "relu6", kernel_initializer = initializer)(input_x_value)
-        x2 = Dense(256, activation = "relu6", kernel_initializer = initializer)(x1)
-        x3 = Dense(256, activation = "relu6", kernel_initializer = initializer)(x2)
-        x4 = Dense(256, activation = "relu6", kernel_initializer = initializer)(x3)
-        x5 = Dense(256, activation = "relu6", kernel_initializer = initializer)(x4)
-        x6 = Dense(256, activation = "relu6", kernel_initializer = initializer)(x5)
+        x1 = Dense(480, activation = "sigmoid", kernel_initializer = initializer)(input_x_value)
+        x2 = Dense(320, activation = "sigmoid", kernel_initializer = initializer)(x1)
+        x3 = Dense(240, activation = "sigmoid", kernel_initializer = initializer)(x2)
+        x4 = Dense(120, activation = "sigmoid", kernel_initializer = initializer)(x3)
+        x5 = Dense(32, activation = "sigmoid", kernel_initializer = initializer)(x4)
+        x6 = Dense(16, activation = "sigmoid", kernel_initializer = initializer)(x5)
         output_y_value = Dense(1, activation = "linear", kernel_initializer = initializer, name = 'output_y_value')(x6)
 
         # (4): Define the model as as Keras Model:
@@ -537,7 +537,7 @@ def run():
     figure_instance_predictions.savefig(f"replica_average_data_v{_version_number}")
     plt.close()
 
-    py_regressor_models.fit(training_x_data, y_mean)
+    py_regressor_models.fit(pd.DataFrame(training_x_data), y_mean)
     print(py_regressor_models.sympy())
     py_regressor_models.sympy()
     py_regressor_models.latex()

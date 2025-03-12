@@ -52,13 +52,13 @@ py_regressor_models = PySRRegressor(
     # === SEARCH SIZE ===
 
     # (1): Number of iterations for the algorithm:
-    niterations = 100,
+    niterations = 500,
 
     # (2): The number of "populations" running:
-    populations = 40,
+    populations = 500,
 
     # (3): The size of each population:
-    population_size = 50,
+    population_size = 100,
 
     # (4): Whatever the fuck this means:
     ncycles_per_iteration = 550,
@@ -82,7 +82,7 @@ py_regressor_models = PySRRegressor(
 
     # === COMPLEXITY ===
 
-    # (1): Multiplicative factor that penalizes a complex function:
+    # (1): Multiplicative factor that penalizes a complex function: l(E) = l_{loss}(E) exp(parsimony * etc.)
     parsimony = 0.0032,
 
     # (2): A complicated dictionary governing how complex a given operation can be:
@@ -95,13 +95,12 @@ py_regressor_models = PySRRegressor(
     complexity_of_operators = None)
 
 
-for _version_number in range(2, 9):
+for _version_number in range(9, 13):
     model_paths = [os.path.join(os.getcwd(), f"app/science/data/version_{_version_number}/replicas/{file}") for file in os.listdir(f"app/science/data/version_{_version_number}/replicas") if file.endswith(".keras")]
     models = [tf.keras.models.load_model(path) for path in model_paths]
 
     print(f"> Obtained {len(models)} models!")
 
-    
     raw_data = pd.read_csv(f"app/science/data/version_{_version_number}/raw/E{_version_number}_raw_data.csv")
     training_x_data = raw_data['x']
     training_y_data = raw_data['y']
