@@ -80,7 +80,7 @@ class PlotCustomizer:
             # (8): Apply a grid on the plot according to a boolean flag:
             self.axes_object.grid(self.grid)
 
-    def add_line_plot(self, x_data, y_data, label: str = "", color = None, linestyle = '-'):
+    def add_line_plot(self, x_data, y_data, label: str = "", color = None, linestyle = '-', alpha = 1.0):
         """
         Add a line plot to the Axes object:
         connects element-wise points of the two provided arrays.
@@ -101,7 +101,7 @@ class PlotCustomizer:
         with rc_context(rc = self._custom_rc_params):
 
             # (1): Just add the line plot:
-            self.axes_object.plot(x_data, y_data, label = label, color = color, linestyle = linestyle)
+            self.axes_object.plot(x_data, y_data, label = label, color = color, linestyle = linestyle, alpha = alpha)
 
             if label:
                 self.axes_object.legend()
@@ -132,9 +132,9 @@ class PlotCustomizer:
             self.axes_object.fill_between(
                 x_data, 
                 lower_y_data,
-                upper_y_data, 
-                label = label, 
-                color = color, 
+                upper_y_data,
+                label = label,
+                color = color,
                 linestyle = linestyle,
                 alpha = alpha)
 
