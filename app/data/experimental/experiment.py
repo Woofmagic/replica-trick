@@ -46,7 +46,7 @@ class ExperimentalSetup:
         self._NUMBER_OF_DATA_POINTS_RICH = 1000
         self._NUMBER_OF_DATA_POINTS_MEDIUM = 200
         self._NUMBER_OF_DATA_POINTS_SPARSE = 40
-        self._USING_EQUIDISTANT_POINTS = False
+        self._USING_EQUIDISTANT_POINTS = True
 
         self.independent_variable_values = np.array([])
         self.pure_experimental_values = np.array([])
@@ -102,7 +102,8 @@ class ExperimentalSetup:
         gaussian_component = np.random.normal(self.pure_experimental_values, self._BASE_SMEAR_STANDARD_DEVIATION)
 
         # (2): Compute a Gaussian noise to be added on top of the experimental data:
-        stochastic_component = np.random.uniform(self._STOCHASTIC_NOISE_LOW, self._STOCHASTIC_NOISE_HIGH, size = len(self.pure_experimental_values))
+        # stochastic_component = np.random.uniform(self._STOCHASTIC_NOISE_LOW, self._STOCHASTIC_NOISE_HIGH, size = len(self.pure_experimental_values))
+        stochastic_component = np.random.uniform(-self._STOCHASTIC_NOISE_LOW, self._STOCHASTIC_NOISE_LOW, size = len(self.pure_experimental_values))
 
         # # (3): If our "detector" has problems with systematics at the edges of the experimental phase space...:
         # if self._INCREASE_ERRORS_AT_EDGES:
@@ -282,7 +283,7 @@ def conduct_experiment(experiment_name: str):
     """
 
     # (1): First, we determine how robust and serious our experiment is:
-    number_of_data_points = 76
+    number_of_data_points = 100
 
     # (2): We need to define a Sympy variable "x" that's our independent variable:
     sympy_symbol_x = sp.Symbol('x')
@@ -293,7 +294,7 @@ def conduct_experiment(experiment_name: str):
     # (4): Next, we generate the underlying function (symbolically, in Sympy):
     # underlying_symbolic_function = sympy_generate_random_function(sympy_symbol_x, DEPTH_PARAMETER)
     # # Linear:
-    # underlying_symbolic_function = 0.65 * sympy_symbol_x - 0.18
+    underlying_symbolic_function = 0.65 * sympy_symbol_x - 0.18
     # # Quadratic
     # underlying_symbolic_function = 1.02 * sympy_symbol_x**2 - 2.78 * sympy_symbol_x + 3.4
     # # Lorentzian:
@@ -301,8 +302,8 @@ def conduct_experiment(experiment_name: str):
     # # Gaussian:
     # underlying_symbolic_function = sp.exp(- (sympy_symbol_x - 0.145)**2 / (0.214)**2) / (0.214 * sp.sqrt(2. * sp.pi))
     # Sigmoid:
-    a1, b1 = 2.5, 0.1  # Adjust steepness and center shift
-    underlying_symbolic_function = 3 / (1 + sp.exp(-a1 * (sympy_symbol_x - b1)))
+    # a1, b1 = 2.5, 0.1  # Adjust steepness and center shift
+    # underlying_symbolic_function = 3 / (1 + sp.exp(-a1 * (sympy_symbol_x - b1)))
     # # Bimodal Gaussian-like function:
     # a2, b2, c2 = 2.0, -0.5, 0.5
     # underlying_symbolic_function = a2 * (sp.exp(-((sympy_symbol_x - b2) / 0.3) ** 2) + sp.exp(-((sympy_symbol_x - c2) / 0.3) ** 2))

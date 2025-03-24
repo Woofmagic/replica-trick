@@ -190,15 +190,15 @@ def split_data(x_data, y_data, y_error_data, split_percentage = 0.1):
 
 SETTING_VERBOSE = True
 SETTING_DEBUG = True
-LEARNING_RATE = 0.001
-BATCH_SIZE_LOCAL_FITS = 25
+LEARNING_RATE = 0.005
+BATCH_SIZE_LOCAL_FITS = 32
 BATCH_SIZE_GLOBAL_FITS = 10
 EARLYSTOP_PATIENCE = 1000
 MODIFY_LR_PATIENCE = 400
 MODIFY_LR_FACTOR = 0.9
 SETTING_DNN_TRAINING_VERBOSE = 1
 
-NUMBER_OF_REPLICAS = 2
+NUMBER_OF_REPLICAS = 100
 EPOCHS = 2000
 
 def run():
@@ -212,7 +212,10 @@ def run():
     print(f"> Determined next analysis directory: {_version_number}")
 
     os.makedirs(f'{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/fits')
-    os.makedirs(f'{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/plots')
+    os.makedirs(f'{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/plots/pseudodata')
+    os.makedirs(f'{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/plots/losses')
+    os.makedirs(f'{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/plots/fits')
+    os.makedirs(f'{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/plots/performance')
     os.makedirs(f'{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/sr_analysis')
 
     os.makedirs(f'{_PATH_SCIENCE_DATA}version_{_version_number}/losses')
@@ -237,9 +240,6 @@ def run():
 
     # (1): Nonsense for now
     kinematic_set_integer = 1
-
-    # (2): The number of replicas to use.
-    number_of_replicas = 2
     
     # run_replica_method(kinematic_set_integer, number_of_replicas)
     experimental_x_data, experimental_y_data, experimental_y_error_data = conduct_experiment(_version_number)
@@ -297,6 +297,8 @@ def run():
         figure_instance_pseudodata.savefig(
             fname = f"{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/plots/pseudodata/generated_pseudodata_replica_{replica_index + 1}_v{_version_number}.png")
 
+        input_x_value = Input(shape = (1, ), name = 'input_layer')
+        
         initializer = tf.keras.initializers.RandomUniform(
             minval = -10.0,
             maxval = 10.0,
@@ -306,10 +308,11 @@ def run():
         
         # (3): Define the Model Architecture:
         x1 = Dense(64, activation = "relu", kernel_initializer = initializer)(input_x_value)
-        x2 = Dense(64, activation = "relu", kernel_initializer = initializer)(x1)
-        x3 = Dense(32, activation = "relu", kernel_initializer = initializer)(x2)
-        x4 = Dense(16, activation = "relu", kernel_initializer = initializer)(x3)
-        output_y_value = Dense(1, activation = "linear", kernel_initializer = initializer, name = 'output_y_value')(x4)
+        x2 = Dense(128, activation = "relu", kernel_initializer = initializer)(x1)
+        x3 = Dense(128, activation = "relu", kernel_initializer = initializer)(x2)
+        x4 = Dense(64, activation = "relu", kernel_initializer = initializer)(x3)
+        x5 = Dense(32, activation = "relu", kernel_initializer = initializer)(x4)
+        output_y_value = Dense(1, activation = "linear", kernel_initializer = initializer, name = 'output_y_value')(x5)
 
         # (4): Define the model as as Keras Model:
         tensorflow_network = Model(
@@ -319,12 +322,12 @@ def run():
         
         tensorflow_network.compile(
             optimizer='adam',
-            loss = tf.keras.losses.MeanSquaredError(learning_rate = LEARNING_RATE),
+            loss = tf.keras.losses.MeanSquaredError(),
             metrics = [
                 tf.keras.metrics.MeanSquaredError()
                 ])
         
-        # tensorflow_network.summary()
+        tensorflow_network.summary()
 
         start_time_in_milliseconds = datetime.datetime.now().replace(microsecond = 0)
         
@@ -424,10 +427,11 @@ def run():
             color = "blue",
             markersize = 4.)
         
-        figure_instance_nn_loss.savefig(f"{_PATH_SCIENCE_DATA}version_{_version_number}/plots/losses/loss_v{replica_index+1}_v{_version_number}.png")
+        figure_instance_nn_loss.savefig(f"{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/plots/losses/loss_v{replica_index+1}_v{_version_number}.png")
         figure_instance_fitting.savefig(f"{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/plots/fits/fitting_replica_{replica_index+1}_v{_version_number}.png")
 
     model_paths = [os.path.join(os.getcwd(), f"app/science/data/version_{_version_number}/replicas/{file}") for file in os.listdir(f"app/science/data/version_{_version_number}/replicas") if file.endswith(".keras")]
+    
     models = [tf.keras.models.load_model(path) for path in model_paths]
 
     print(f"> Obtained {len(models)} models!")
@@ -530,10 +534,10 @@ def run():
             markersize = 1.)
     
     figure_instance_predictions.savefig(
-        fname = f"{_PATH_SCIENCE_DATA}version_{_version_number}/plots/performance/replica_average_data_v{_version_number}")
+        fname = f"{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/plots/performance/replica_average_data_v{_version_number}")
     plt.close()
 
-    py_regressor_models.fit(training_x_data, y_mean)
+    py_regressor_models.fit(pd.DataFrame(training_x_data), y_mean)
     
     print(f"> Best fit model for this: {py_regressor_models.latex()}")
 
@@ -564,7 +568,7 @@ def run():
         y_errorbars = y_error_data,
         label = "Experimental Data",
         color = "red",
-        marker = 'o,',)
+        marker = 'o',)
 
     colors = plt.cm.magma(np.linspace(0, 1, len(py_regressor_models.equations_)))
 
@@ -597,7 +601,7 @@ def run():
         fname = f"replica_average_with_sr_v{_version_number}")
     plt.close()
 
-    py_regressor_models.fit(training_x_data, y_median)
+    py_regressor_models.fit(pd.DataFrame(training_x_data), y_median)
     
     print(f"> Best fit model for this: {py_regressor_models.latex()}")
 
@@ -605,7 +609,7 @@ def run():
     axis_instance_pysr_predictions = figure_pysr_predictions.add_subplot(1, 1, 1)
     plot_customization_pysr_predictions = PlotCustomizer(
         axis_instance_pysr_predictions,
-        title = fr"Replica Method Medians Predictions for $N = {{NUMBER_OF_REPLICAS}}",
+        title = fr"Replica Method Medians Predictions for $N = {{NUMBER_OF_REPLICAS}}$",
         xlabel = r"$x$",
         ylabel = r"$f(x)$",)
     plot_customization_pysr_predictions.add_line_plot(
@@ -628,7 +632,7 @@ def run():
         y_errorbars = y_error_data,
         label = "Experimental Data",
         color = "red",
-        marker = 'o,',)
+        marker = 'o',)
 
     colors = plt.cm.magma(np.linspace(0, 1, len(py_regressor_models.equations_)))
 
