@@ -433,37 +433,35 @@ def run():
 
     print(f"> Obtained {len(models)} models!")
 
+    raw_data = pd.read_csv(f"E{_version_number}_raw_data.csv")
+    training_x_data = raw_data['x']
+    training_y_data = raw_data['y']
+    y_error_data = raw_data['y_error']
+
     def predict_with_models(models, x_values):
+        x_values = np.array(x_values).reshape(-1, 1)
+        
+        all_predictions = np.array([model.predict(x_values).flatten() for model in models])
 
         y_mean = np.zeros(len(x_values))
-        y_min = np.full(len(x_values), fill_value = np.inf)
-        y_max = np.full(len(x_values), fill_value = - np.inf)
-        y_q1 = np.zeros(len(x_values))
-        y_q3 = np.zeros(len(x_values))
-        all_predictions = []
-
-        for model in models:
-
-            y_prediction = model.predict(x_values).flatten()
-            all_predictions.append(y_prediction)
-            y_min = np.minimum(y_min, y_prediction)
-            y_max = np.maximum(y_max, y_prediction)
-            y_mean += y_prediction / len(models)
-
-        all_predictions = np.array(all_predictions)
+        y_min = np.min(all_predictions, axis = 0)
+        y_max = np.max(all_predictions, axis = 0)
+        y_q1 = np.percentile(all_predictions, 25, axis = 0)
+        y_q3 = np.percentile(all_predictions, 75, axis = 0)
 
         y_percentile_10 = np.percentile(all_predictions, 10, axis = 0)
         y_percentile_20 = np.percentile(all_predictions, 20, axis = 0)
         y_percentile_30 = np.percentile(all_predictions, 30, axis = 0)
         y_percentile_40 = np.percentile(all_predictions, 40, axis = 0)
+        y_median = np.percentile(all_predictions, 50, axis = 0)
         y_percentile_60 = np.percentile(all_predictions, 50, axis = 0)
         y_percentile_70 = np.percentile(all_predictions, 60, axis = 0)
         y_percentile_80 = np.percentile(all_predictions, 70, axis = 0)
         y_percentile_90 = np.percentile(all_predictions, 80, axis = 0)
 
-        return y_mean, y_min, y_max, y_percentile_10, y_percentile_20, y_percentile_30, y_percentile_40, y_percentile_60, y_percentile_70, y_percentile_80, y_percentile_90
+        return y_mean, y_min, y_max, y_q1, y_q3, y_percentile_10, y_percentile_20, y_percentile_30, y_percentile_40, y_median, y_percentile_60, y_percentile_70, y_percentile_80, y_percentile_90
 
-    y_mean, y_min, y_max, y_percentile_10, y_percentile_20, y_percentile_30, y_percentile_40, y_percentile_60, y_percentile_70, y_percentile_80, y_percentile_90 = predict_with_models(models, training_x_data)
+    y_mean, y_min, y_max, y_q1, y_q3, y_percentile_10, y_percentile_20, y_percentile_30, y_percentile_40, y_median, y_percentile_60, y_percentile_70, y_percentile_80, y_percentile_90 = predict_with_models(models, training_x_data)
 
     # (1): Set up the Figure instance
     figure_instance_predictions = plt.figure(figsize = (18, 6))
@@ -539,6 +537,130 @@ def run():
     py_regressor_models.fit(training_x_data, y_mean)
     
     print(f"> Best fit model for this: {py_regressor_models.latex()}")
+
+    figure_pysr_predictions = plt.figure(figsize = (18, 6))
+    axis_instance_pysr_predictions = figure_pysr_predictions.add_subplot(1, 1, 1)
+    plot_customization_pysr_predictions = PlotCustomizer(
+        axis_instance_pysr_predictions,
+        title = fr"Replica Method Predictions for $N = {{NUMBER_OF_REPLICAS}}",
+        xlabel = r"$x$",
+        ylabel = r"$f(x)$",)
+    plot_customization_pysr_predictions.add_line_plot(
+        x_data = training_x_data,
+        y_data = y_mean,
+        label = "Replica Average",
+        color = "blue",
+        linestyle = '-')
+    plot_customization_pysr_predictions.add_fill_between_plot(
+        x_data = training_x_data,
+        lower_y_data = y_q1,
+        upper_y_data = y_q3,
+        label = "IQR",
+        color = "lightgray",
+        alpha = 0.34,)
+    plot_customization_pysr_predictions.add_errorbar_plot(
+        x_data = training_x_data,
+        y_data = training_y_data,
+        x_errorbars = np.zeros(y_error_data.shape),
+        y_errorbars = y_error_data,
+        label = "Experimental Data",
+        color = "red",
+        marker = 'o,',)
+
+    colors = plt.cm.magma(np.linspace(0, 1, len(py_regressor_models.equations_)))
+
+    for index, (equation, color) in enumerate(zip(py_regressor_models.equations_.itertuples(), colors)):
+
+        equation_complexity = equation.complexity
+        equation_latex = equation.sympy_format
+
+        y_pysr_mean_predictions = py_regressor_models.predict(pd.DataFrame(training_x_data), index = index)
+
+        plot_customization_pysr_predictions.add_line_plot(
+            x_data = training_x_data,
+            y_data = y_pysr_mean_predictions,
+            label = fr"PySR (C = {equation_complexity}): $y(x) = {equation_latex}$",
+            color = color,
+            linestyle = '-',
+            alpha = 0.24,)
+        
+    axis_instance_predictions.legend(
+        loc = 2,
+        fontsize = 9,
+        shadow = True,
+        bbox_to_anchor = (1.05, 1),
+        borderaxespad = 0.,
+        frameon = True,)
+    
+    figure_pysr_predictions.tight_layout()
+
+    figure_pysr_predictions.savefig(
+        fname = f"replica_average_with_sr_v{_version_number}")
+    plt.close()
+
+    py_regressor_models.fit(training_x_data, y_median)
+    
+    print(f"> Best fit model for this: {py_regressor_models.latex()}")
+
+    figure_pysr_predictions = plt.figure(figsize = (18, 6))
+    axis_instance_pysr_predictions = figure_pysr_predictions.add_subplot(1, 1, 1)
+    plot_customization_pysr_predictions = PlotCustomizer(
+        axis_instance_pysr_predictions,
+        title = fr"Replica Method Medians Predictions for $N = {{NUMBER_OF_REPLICAS}}",
+        xlabel = r"$x$",
+        ylabel = r"$f(x)$",)
+    plot_customization_pysr_predictions.add_line_plot(
+        x_data = training_x_data,
+        y_data = y_median,
+        label = "Replica Median",
+        color = "blueviolet",
+        linestyle = '-')
+    plot_customization_pysr_predictions.add_fill_between_plot(
+        x_data = training_x_data,
+        lower_y_data = y_q1,
+        upper_y_data = y_q3,
+        label = "IQR",
+        color = "lightgray",
+        alpha = 0.34,)
+    plot_customization_pysr_predictions.add_errorbar_plot(
+        x_data = training_x_data,
+        y_data = training_y_data,
+        x_errorbars = np.zeros(y_error_data.shape),
+        y_errorbars = y_error_data,
+        label = "Experimental Data",
+        color = "red",
+        marker = 'o,',)
+
+    colors = plt.cm.magma(np.linspace(0, 1, len(py_regressor_models.equations_)))
+
+    for index, (equation, color) in enumerate(zip(py_regressor_models.equations_.itertuples(), colors)):
+
+        equation_complexity = equation.complexity
+        equation_latex = equation.sympy_format
+
+        y_pysr_median_predictions = py_regressor_models.predict(pd.DataFrame(training_x_data), index = index)
+
+        plot_customization_pysr_predictions.add_line_plot(
+            x_data = training_x_data,
+            y_data = y_pysr_median_predictions,
+            label = fr"PySR (C = {equation_complexity}): $y(x) = {equation_latex}$",
+            color = color,
+            linestyle = '-',
+            alpha = 0.24,)
+        
+    axis_instance_predictions.legend(
+        loc = 2,
+        fontsize = 9,
+        shadow = True,
+        bbox_to_anchor = (1.05, 1),
+        borderaxespad = 0.,
+        frameon = True,)
+    
+    figure_pysr_predictions.tight_layout()
+
+    figure_pysr_predictions.savefig(
+        fname = f"replica_median_with_sr_v{_version_number}")
+    plt.close()
 
 
 if __name__ == "__main__":
