@@ -112,8 +112,8 @@ py_regressor_models = PySRRegressor(
 
     # === COMPLEXITY ===
 
-    # (1): Multiplicative factor that penalizes a complex function: l(E) = l_{loss}(E) exp(parsimony * etc.)
-    parsimony = 0.0032,
+    # (1): Multiplicative factor that penalizes a complex function:
+    parsimony = 0.03,
 
     # (2): A complicated dictionary governing how complex a given operation can be:
     constraints = None,
@@ -190,7 +190,8 @@ def split_data(x_data, y_data, y_error_data, split_percentage = 0.1):
 
 SETTING_VERBOSE = True
 SETTING_DEBUG = True
-
+LEARNING_RATE = 0.001
+EPOCHS = 3000
 BATCH_SIZE_LOCAL_FITS = 25
 BATCH_SIZE_GLOBAL_FITS = 10
 EARLYSTOP_PATIENCE = 1000
@@ -202,7 +203,7 @@ NUMBER_OF_REPLICAS = 100
 EPOCHS = 2000
 
 def run():
-    
+
     _PATH_SCIENCE_ANALYSIS = 'app/science/analysis/'
     _PATH_SCIENCE_DATA = 'app/science/data/'
 
@@ -235,10 +236,13 @@ def run():
 
     print(f"> Now running TensorFlow Version {tf.version.VERSION}")
 
-    # (1): Nonsense foor now
+    # (1): Nonsense for now
     kinematic_set_integer = 1
 
-    # run_replica_method(kinematic_set_integer, NUMBER_OF_REPLICAS)
+    # (2): The number of replicas to use.
+    number_of_replicas = 2
+    
+    # run_replica_method(kinematic_set_integer, number_of_replicas)
     experimental_x_data, experimental_y_data, experimental_y_error_data = conduct_experiment(_version_number)
 
     # (1): Begin iterating over the replicas:
@@ -271,7 +275,7 @@ def run():
         
         plot_customization_predictions = PlotCustomizer(
             axis_instance_pseudodata,
-            title = r"Pseudodata Generation for Replica {}".format(replica_index + 1),
+            title = rf"Pseudodata Generation for Replica ${{replica_index + 1}}$",
             xlabel = r"$x$",
             ylabel = r"$y\left(x\right)$")
         
@@ -291,7 +295,8 @@ def run():
             label = r'Generated Pseudodata',
             color = "orange",)
         
-        figure_instance_pseudodata.savefig(f"generated_pseudodata_replica_{replica_index + 1}_v{_version_number}.png")   
+        figure_instance_pseudodata.savefig(
+            fname = f"{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/plots/pseudodata/generated_pseudodata_replica_{replica_index + 1}_v{_version_number}.png")
 
         initializer = tf.keras.initializers.RandomUniform(
             minval = -10.0,
@@ -301,13 +306,11 @@ def run():
         input_x_value = Input(shape = (1, ), name = 'input_layer')
         
         # (3): Define the Model Architecture:
-        x1 = Dense(480, activation = "sigmoid", kernel_initializer = initializer)(input_x_value)
-        x2 = Dense(320, activation = "sigmoid", kernel_initializer = initializer)(x1)
-        x3 = Dense(240, activation = "sigmoid", kernel_initializer = initializer)(x2)
-        x4 = Dense(120, activation = "sigmoid", kernel_initializer = initializer)(x3)
-        x5 = Dense(32, activation = "sigmoid", kernel_initializer = initializer)(x4)
-        x6 = Dense(16, activation = "sigmoid", kernel_initializer = initializer)(x5)
-        output_y_value = Dense(1, activation = "linear", kernel_initializer = initializer, name = 'output_y_value')(x6)
+        x1 = Dense(64, activation = "relu", kernel_initializer = initializer)(input_x_value)
+        x2 = Dense(64, activation = "relu", kernel_initializer = initializer)(x1)
+        x3 = Dense(32, activation = "relu", kernel_initializer = initializer)(x2)
+        x4 = Dense(16, activation = "relu", kernel_initializer = initializer)(x3)
+        output_y_value = Dense(1, activation = "linear", kernel_initializer = initializer, name = 'output_y_value')(x4)
 
         # (4): Define the model as as Keras Model:
         tensorflow_network = Model(
@@ -317,7 +320,7 @@ def run():
         
         tensorflow_network.compile(
             optimizer='adam',
-            loss = tf.keras.losses.MeanSquaredError(),
+            loss = tf.keras.losses.MeanSquaredError(learning_rate = LEARNING_RATE),
             metrics = [
                 tf.keras.metrics.MeanSquaredError()
                 ])
@@ -334,14 +337,8 @@ def run():
             validation_data = (testing_x_data, testing_y_data),
             epochs = EPOCHS,
             # callbacks = [
-            #     tf.keras.callbacks.ReduceLROnPlateau(
-            #         monitor = 'loss',
-            #         factor = MODIFY_LR_FACTOR,
-            #         patience = MODIFY_LR_PATIENCE,
-            #         mode = 'auto'),
-            #     tf.keras.callbacks.EarlyStopping(
-            #         monitor = 'loss',
-            #         patience = EARLYSTOP_PATIENCE)
+            #     tf.keras.callbacks.ReduceLROnPlateau(monitor = 'loss', factor = modify_LR_factor, patience = modify_LR_patience, mode = 'auto'),
+            #     tf.keras.callbacks.EarlyStopping(monitor = 'loss', patience = EarlyStop_patience)
             # ],
             batch_size = BATCH_SIZE_LOCAL_FITS,
             verbose = SETTING_DNN_TRAINING_VERBOSE)
@@ -354,6 +351,7 @@ def run():
         try:
             tensorflow_network.save(f"{_PATH_SCIENCE_DATA}version_{_version_number}/replicas/replica_number_{replica_index + 1}_v{_version_number}.keras")
             print("> Saved replica!")
+
         except Exception as error:
             print(f"> Error saving replica:\n> {error}!")
             sys.exit(0)
@@ -427,8 +425,8 @@ def run():
             color = "blue",
             markersize = 4.)
         
-        figure_instance_nn_loss.savefig(f"{_PATH_SCIENCE_DATA}version_{_version_number}/losses/loss_v{replica_index+1}_v{_version_number}.png")
-        figure_instance_fitting.savefig(f"{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/fits/fitting_replica_{replica_index+1}_v{_version_number}.png")
+        figure_instance_nn_loss.savefig(f"{_PATH_SCIENCE_DATA}version_{_version_number}/plots/losses/loss_v{replica_index+1}_v{_version_number}.png")
+        figure_instance_fitting.savefig(f"{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/plots/fits/fitting_replica_{replica_index+1}_v{_version_number}.png")
 
     model_paths = [os.path.join(os.getcwd(), f"app/science/data/version_{_version_number}/replicas/{file}") for file in os.listdir(f"app/science/data/version_{_version_number}/replicas") if file.endswith(".keras")]
     models = [tf.keras.models.load_model(path) for path in model_paths]
@@ -534,15 +532,13 @@ def run():
             marker = 'o',
             markersize = 1.)
     
-    figure_instance_predictions.savefig(f"replica_average_data_v{_version_number}")
+    figure_instance_predictions.savefig(
+        fname = f"{_PATH_SCIENCE_DATA}version_{_version_number}/plots/performance/replica_average_data_v{_version_number}")
     plt.close()
 
-    py_regressor_models.fit(pd.DataFrame(training_x_data), y_mean)
-    print(py_regressor_models.sympy())
-    py_regressor_models.sympy()
-    py_regressor_models.latex()
-    py_regressor_models.latex_table()
-
+    py_regressor_models.fit(training_x_data, y_mean)
+    
+    print(f"> Best fit model for this: {py_regressor_models.latex()}")
 
 
 if __name__ == "__main__":
