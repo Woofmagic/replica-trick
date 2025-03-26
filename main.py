@@ -204,23 +204,22 @@ EPOCHS = 2000
 def run():
 
     _PATH_SCIENCE_ANALYSIS = 'app/science/analysis/'
-    _PATH_SCIENCE_DATA = 'app/science/data/'
 
     # Get next version directories
     _version_number = get_next_version(_PATH_SCIENCE_ANALYSIS)
 
     print(f"> Determined next analysis directory: {_version_number}")
 
-    os.makedirs(f'{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/fits')
+    os.makedirs(f'{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/data/raw')
+    os.makedirs(f'{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/data/replicas')
+
     os.makedirs(f'{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/plots/pseudodata')
     os.makedirs(f'{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/plots/losses')
     os.makedirs(f'{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/plots/fits')
     os.makedirs(f'{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/plots/performance')
-    os.makedirs(f'{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/sr_analysis')
 
-    os.makedirs(f'{_PATH_SCIENCE_DATA}version_{_version_number}/losses')
-    os.makedirs(f'{_PATH_SCIENCE_DATA}version_{_version_number}/raw')
-    os.makedirs(f'{_PATH_SCIENCE_DATA}version_{_version_number}/replicas')
+    os.makedirs(f'{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/sr_analysis/replica_average_sr')
+    os.makedirs(f'{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/sr_analysis/replica_median_sr')
 
     try:
         # tf.config.set_visible_devices([],'GPU')
@@ -257,7 +256,7 @@ def run():
             new_column_name = 'y_pseudodata')
         
         pseudodata_dataframe.to_csv(
-            path_or_buf = f"pseudodata_replica_{replica_index+1}_data_v{_version_number}.csv",
+            path_or_buf = f"{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/data/raw/pseudodata_replica_{replica_index+1}_data_v{_version_number}.csv",
             index_label = None)
 
         training_x_data, testing_x_data, training_y_data, testing_y_data, training_y_error, testing_y_error = split_data(
@@ -351,7 +350,7 @@ def run():
         model_predictions = tensorflow_network.predict(training_x_data)
 
         try:
-            tensorflow_network.save(f"{_PATH_SCIENCE_DATA}version_{_version_number}/replicas/replica_number_{replica_index + 1}_v{_version_number}.keras")
+            tensorflow_network.save(f"{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/data/replicas/replica_number_{replica_index + 1}_v{_version_number}.keras")
             print("> Saved replica!")
 
         except Exception as error:
@@ -474,7 +473,7 @@ def run():
     
     plot_customization_predictions = PlotCustomizer(
         axis_instance_predictions,
-        title = r"$N = {}$".format(NUMBER_OF_REPLICAS),
+        title = rf"Replica Average for $N = {{NUMBER_OF_REPLICAS}}$",
         xlabel = r"$x$",
         ylabel = r"$f(x)$")
     
@@ -545,7 +544,7 @@ def run():
     axis_instance_pysr_predictions = figure_pysr_predictions.add_subplot(1, 1, 1)
     plot_customization_pysr_predictions = PlotCustomizer(
         axis_instance_pysr_predictions,
-        title = fr"Replica Method Predictions for $N = {{NUMBER_OF_REPLICAS}}",
+        title = fr"Replica Method Predictions for $N = {{NUMBER_OF_REPLICAS}}$",
         xlabel = r"$x$",
         ylabel = r"$f(x)$",)
     plot_customization_pysr_predictions.add_line_plot(
@@ -598,7 +597,7 @@ def run():
     figure_pysr_predictions.tight_layout()
 
     figure_pysr_predictions.savefig(
-        fname = f"replica_average_with_sr_v{_version_number}")
+        fname = f"{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/plots/performance/replica_average_with_sr_v{_version_number}")
     plt.close()
 
     py_regressor_models.fit(pd.DataFrame(training_x_data), y_median)
@@ -662,7 +661,7 @@ def run():
     figure_pysr_predictions.tight_layout()
 
     figure_pysr_predictions.savefig(
-        fname = f"replica_median_with_sr_v{_version_number}")
+        fname = f"{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/plots/performance/replica_median_with_sr_v{_version_number}")
     plt.close()
 
 
