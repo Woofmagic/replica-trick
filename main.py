@@ -90,7 +90,7 @@ py_regressor_models = PySRRegressor(
     # (3): The size of each population:
     population_size = 50,
 
-    # (4): Whatever the fuck this means:
+    # (4): Whatever this means:
     ncycles_per_iteration = 550,
 
     # === OBJECTIVE ===
