@@ -180,7 +180,8 @@ class PlotCustomizer:
             y_errorbars,
             label: str = "",
             color = 'black',
-            marker = 'o'):
+            marker = 'o',
+            alpha = 1.0):
         """
         Add a scatter plot with errorbars to the Axes object.
 
@@ -216,7 +217,8 @@ class PlotCustomizer:
                 markersize = 3.0,
                 ecolor = 'black',
                 elinewidth = 0.5,
-                capsize = 1)
+                capsize = 1,
+                alpha = alpha)
 
             if label:
                 self.axes_object.legend()
