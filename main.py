@@ -45,6 +45,8 @@ from tensorflow.keras.layers import Input, Dense
 # External Library | TensorFlow | Keras | Models | Model
 from tensorflow.keras.models import Model
 
+from tensorflow import keras
+
 # External Library | PySR
 from pysr import PySRRegressor
 
@@ -193,13 +195,13 @@ SETTING_DEBUG = True
 LEARNING_RATE = 0.005
 BATCH_SIZE_LOCAL_FITS = 32
 BATCH_SIZE_GLOBAL_FITS = 10
-EARLYSTOP_PATIENCE = 1000
-MODIFY_LR_PATIENCE = 400
+EARLY_STOP_PATIENCE = 20
+learning_rate_patience = 20
 MODIFY_LR_FACTOR = 0.9
 SETTING_DNN_TRAINING_VERBOSE = 1
 
-NUMBER_OF_REPLICAS = 100
-EPOCHS = 2000
+NUMBER_OF_REPLICAS = 2
+EPOCHS = 1000
 
 def run():
 
@@ -261,9 +263,9 @@ def run():
 
         training_x_data, testing_x_data, training_y_data, testing_y_data, training_y_error, testing_y_error = split_data(
             x_data = pseudodata_dataframe['x'],
-            y_data = pseudodata_dataframe['y_error'],
+            y_data = pseudodata_dataframe['y'],
             y_error_data = pseudodata_dataframe['y_pseudodata'],
-            split_percentage = 0.1)
+            split_percentage = 0.2)
         
         # (1): Set up the Figure instance
         figure_instance_pseudodata = plt.figure(figsize = (18, 6))
@@ -273,7 +275,7 @@ def run():
         
         plot_customization_predictions = PlotCustomizer(
             axis_instance_pseudodata,
-            title = rf"Pseudodata Generation for Replica ${{replica_index + 1}}$",
+            title = rf"Pseudodata Generation for Replica ${replica_index + 1}$",
             xlabel = r"$x$",
             ylabel = r"$y\left(x\right)$")
         
@@ -298,20 +300,18 @@ def run():
 
         input_x_value = Input(shape = (1, ), name = 'input_layer')
         
-        initializer = tf.keras.initializers.RandomUniform(
-            minval = -10.0,
-            maxval = 10.0,
-            seed = None)
-
-        input_x_value = Input(shape = (1, ), name = 'input_layer')
+        # initializer = tf.keras.initializers.RandomUniform(
+        #     minval = -10.0,
+        #     maxval = 10.0,
+        #     seed = None)
         
         # (3): Define the Model Architecture:
-        x1 = Dense(64, activation = "relu", kernel_initializer = initializer)(input_x_value)
-        x2 = Dense(128, activation = "relu", kernel_initializer = initializer)(x1)
-        x3 = Dense(128, activation = "relu", kernel_initializer = initializer)(x2)
-        x4 = Dense(64, activation = "relu", kernel_initializer = initializer)(x3)
-        x5 = Dense(32, activation = "relu", kernel_initializer = initializer)(x4)
-        output_y_value = Dense(1, activation = "linear", kernel_initializer = initializer, name = 'output_y_value')(x5)
+        x1 = Dense(32, activation = "relu")(input_x_value)
+        x2 = Dense(16, activation = "relu")(x1)
+        # x3 = Dense(32, activation = "relu", kernel_initializer = initializer)(x2)
+        # x4 = Dense(16, activation = "relu", kernel_initializer = initializer)(x3)
+        # x5 = Dense(8, activation = "relu", kernel_initializer = initializer)(x4)
+        output_y_value = Dense(1, activation = "linear", name = 'output_y_value')(x2)
 
         # (4): Define the model as as Keras Model:
         tensorflow_network = Model(
@@ -320,7 +320,7 @@ def run():
             name = "basic_function_predictor")
         
         tensorflow_network.compile(
-            optimizer='adam',
+            optimizer = keras.optimizers.Adam(learning_rate = 0.01),
             loss = tf.keras.losses.MeanSquaredError(),
             metrics = [
                 tf.keras.metrics.MeanSquaredError()
@@ -337,16 +337,20 @@ def run():
             training_y_data,
             validation_data = (testing_x_data, testing_y_data),
             epochs = EPOCHS,
-            # callbacks = [
-            #     tf.keras.callbacks.ReduceLROnPlateau(monitor = 'loss', factor = modify_LR_factor, patience = modify_LR_patience, mode = 'auto'),
-            #     tf.keras.callbacks.EarlyStopping(monitor = 'loss', patience = EarlyStop_patience)
-            # ],
+            callbacks = [
+                # tf.keras.callbacks.ReduceLROnPlateau(monitor = 'loss', factor = modify_LR_factor, patience = learning_rate_patience, mode = 'auto'),
+                # tf.keras.callbacks.EarlyStopping(monitor = 'loss', patience = learning_rate_patience)
+            ],
             batch_size = BATCH_SIZE_LOCAL_FITS,
             verbose = SETTING_DNN_TRAINING_VERBOSE)
 
         # (3): Construct the loss plot:
         training_loss_data = history_of_training.history['loss']
         validation_loss_data = history_of_training.history['val_loss']
+
+        validaton_loss, validation_mae = tensorflow_network.evaluate(testing_x_data, testing_y_data)
+        print(f'Validation Loss: {validaton_loss:.4f}, Validation MAE: {validation_mae:.4f}')
+
         model_predictions = tensorflow_network.predict(training_x_data)
 
         try:
@@ -429,7 +433,7 @@ def run():
         figure_instance_nn_loss.savefig(f"{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/plots/losses/loss_v{replica_index+1}_v{_version_number}.png")
         figure_instance_fitting.savefig(f"{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/plots/fits/fitting_replica_{replica_index+1}_v{_version_number}.png")
 
-    model_paths = [os.path.join(os.getcwd(), f"app/science/data/version_{_version_number}/replicas/{file}") for file in os.listdir(f"app/science/data/version_{_version_number}/replicas") if file.endswith(".keras")]
+    model_paths = [os.path.join(os.getcwd(), f"app/science/analysis/version_{_version_number}/data/replicas/{file}") for file in os.listdir(f"app/science/analysis/version_{_version_number}/data/replicas") if file.endswith(".keras")]
     
     models = [tf.keras.models.load_model(path) for path in model_paths]
 
@@ -445,7 +449,7 @@ def run():
         
         all_predictions = np.array([model.predict(x_values).flatten() for model in models])
 
-        y_mean = np.zeros(len(x_values))
+        y_mean = np.mean(all_predictions, axis = 0)
         y_min = np.min(all_predictions, axis = 0)
         y_max = np.max(all_predictions, axis = 0)
         y_q1 = np.percentile(all_predictions, 25, axis = 0)
@@ -473,7 +477,7 @@ def run():
     
     plot_customization_predictions = PlotCustomizer(
         axis_instance_predictions,
-        title = rf"Replica Average for $N = {{NUMBER_OF_REPLICAS}}$",
+        title = rf"Replica Average for $N = {NUMBER_OF_REPLICAS}$",
         xlabel = r"$x$",
         ylabel = r"$f(x)$")
     
@@ -544,7 +548,7 @@ def run():
     axis_instance_pysr_predictions = figure_pysr_predictions.add_subplot(1, 1, 1)
     plot_customization_pysr_predictions = PlotCustomizer(
         axis_instance_pysr_predictions,
-        title = fr"Replica Method Predictions for $N = {{NUMBER_OF_REPLICAS}}$",
+        title = fr"Replica Method Predictions for $N = {NUMBER_OF_REPLICAS}$",
         xlabel = r"$x$",
         ylabel = r"$f(x)$",)
     plot_customization_pysr_predictions.add_line_plot(
@@ -608,7 +612,7 @@ def run():
     axis_instance_pysr_predictions = figure_pysr_predictions.add_subplot(1, 1, 1)
     plot_customization_pysr_predictions = PlotCustomizer(
         axis_instance_pysr_predictions,
-        title = fr"Replica Method Medians Predictions for $N = {{NUMBER_OF_REPLICAS}}$",
+        title = fr"Replica Method Medians Predictions for $N = {NUMBER_OF_REPLICAS}$",
         xlabel = r"$x$",
         ylabel = r"$f(x)$",)
     plot_customization_pysr_predictions.add_line_plot(
