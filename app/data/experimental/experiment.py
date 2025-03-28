@@ -39,6 +39,7 @@ class ExperimentalSetup:
         self._SYSTEMATIC_SHIFT_STD = 0.05  # Bias-induced shift in measurement
         self._STOCHASTIC_NOISE_LOW = 0.09
         self._STOCHASTIC_NOISE_HIGH = 0.14  # Random uniform noise
+        self._WHITE_NOISE_TARGET_LEVEL = 0.09
 
         self._INCREASE_ERRORS_AT_EDGES = False  # More uncertainty at edges
         self._INCREASE_ERRORS_AT_PEAKS = False  # More uncertainty at high function values
@@ -104,6 +105,11 @@ class ExperimentalSetup:
         # (2): Compute a Gaussian noise to be added on top of the experimental data:
         # stochastic_component = np.random.uniform(self._STOCHASTIC_NOISE_LOW, self._STOCHASTIC_NOISE_HIGH, size = len(self.pure_experimental_values))
         stochastic_component = np.random.uniform(-self._STOCHASTIC_NOISE_LOW, self._STOCHASTIC_NOISE_LOW, size = len(self.pure_experimental_values))
+        # stochastic_component = np.random.normal(
+        #     loc = 0., 
+        #     # Below comes from EquATION ?? on pg. 16 from: https://pmc.ncbi.nlm.nih.gov/articles/PMC11074949/pdf/nihms-1824079.pdf
+        #     scale = self._WHITE_NOISE_TARGET_LEVEL * np.sqrt(len(self.pure_experimental_values) * np.sum(self.pure_experimental_values**2)),
+        #     size = len(self.pure_experimental_values))
 
         # # (3): If our "detector" has problems with systematics at the edges of the experimental phase space...:
         # if self._INCREASE_ERRORS_AT_EDGES:
@@ -294,11 +300,11 @@ def conduct_experiment(experiment_name: str):
     # (4): Next, we generate the underlying function (symbolically, in Sympy):
     # underlying_symbolic_function = sympy_generate_random_function(sympy_symbol_x, DEPTH_PARAMETER)
     # # Linear:
-    underlying_symbolic_function = 0.65 * sympy_symbol_x - 0.18
+    # underlying_symbolic_function = 0.65 * sympy_symbol_x - 0.18
     # # Quadratic
     # underlying_symbolic_function = 1.02 * sympy_symbol_x**2 - 2.78 * sympy_symbol_x + 3.4
     # # Lorentzian:
-    # underlying_symbolic_function = 1. / (sp.pi * 0.121 * (1. + ((sympy_symbol_x - (-0.117)) /  0.121)**2))
+    underlying_symbolic_function = 1. / (sp.pi * 0.121 * (1. + ((sympy_symbol_x - (-0.117)) /  0.121)**2))
     # # Gaussian:
     # underlying_symbolic_function = sp.exp(- (sympy_symbol_x - 0.145)**2 / (0.214)**2) / (0.214 * sp.sqrt(2. * sp.pi))
     # Sigmoid:

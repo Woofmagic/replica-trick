@@ -53,15 +53,18 @@ from pysr import PySRRegressor
 # External Library | Pandas
 import pandas as pd
 
+# External Library | SymPy
+import sympy as sp
+
 _SEARCH_SPACE_BINARY_OPERATORS = [
-    "+", "-", "*", "/", "^"
+    "+", "-", "*", "/"
 ]
 
 _SEARCH_SPACE_UNARY_OPERATORS = [
-   "exp", "log", "sqrt", "sin", "cos", "tan"
+
 ]
 
-_SEARCH_SPACE_MAXIUMUM_COMPLEXITY = 25
+_SEARCH_SPACE_MAXIUMUM_COMPLEXITY = 33
 
 _SEARCH_SPACE_MAXIMUM_DEPTH = None
 
@@ -196,11 +199,11 @@ LEARNING_RATE = 0.005
 BATCH_SIZE_LOCAL_FITS = 32
 BATCH_SIZE_GLOBAL_FITS = 10
 EARLY_STOP_PATIENCE = 20
-learning_rate_patience = 20
+LEARNING_RATE_PATIENCE = 20
 MODIFY_LR_FACTOR = 0.9
 SETTING_DNN_TRAINING_VERBOSE = 1
 
-NUMBER_OF_REPLICAS = 2
+NUMBER_OF_REPLICAS = 100
 EPOCHS = 1000
 
 def run():
@@ -338,8 +341,8 @@ def run():
             validation_data = (testing_x_data, testing_y_data),
             epochs = EPOCHS,
             callbacks = [
-                # tf.keras.callbacks.ReduceLROnPlateau(monitor = 'loss', factor = modify_LR_factor, patience = learning_rate_patience, mode = 'auto'),
-                # tf.keras.callbacks.EarlyStopping(monitor = 'loss', patience = learning_rate_patience)
+                # tf.keras.callbacks.ReduceLROnPlateau(monitor = 'loss', factor = modify_LR_factor, patience = LEARNING_RATE_PATIENCE, mode = 'auto'),
+                # tf.keras.callbacks.EarlyStopping(monitor = 'loss', patience = LEARNING_RATE_PATIENCE)
             ],
             batch_size = BATCH_SIZE_LOCAL_FITS,
             verbose = SETTING_DNN_TRAINING_VERBOSE)
@@ -573,31 +576,46 @@ def run():
         color = "red",
         marker = 'o',)
 
-    colors = plt.cm.magma(np.linspace(0, 1, len(py_regressor_models.equations_)))
+    sorted_equations = sorted(py_regressor_models.equations_.itertuples(), key=lambda eq: eq.loss, reverse=True)
 
-    for index, (equation, color) in enumerate(zip(py_regressor_models.equations_.itertuples(), colors)):
+    colors = plt.cm.jet(np.linspace(0, 1, len(sorted_equations)))
+
+    for index, (equation, color) in enumerate(zip(sorted_equations, colors)):
 
         equation_complexity = equation.complexity
-        equation_latex = equation.sympy_format
+        equation_loss = equation.loss
+        # equation_latex = equation.sympy_format
+        simplified_equation = sp.simplify(equation.sympy_format)  # Simplify the equation
+        equation_latex = sp.latex(simplified_equation)  # Convert to LaTeX format
 
         y_pysr_mean_predictions = py_regressor_models.predict(pd.DataFrame(training_x_data), index = index)
 
         plot_customization_pysr_predictions.add_line_plot(
             x_data = training_x_data,
             y_data = y_pysr_mean_predictions,
-            label = fr"PySR (C = {equation_complexity}): $y(x) = {equation_latex}$",
+            label = fr"PySR (C = {equation_complexity}) (L = {equation_loss}): $y(x) = {equation_latex}$",
             color = color,
             linestyle = '-',
             alpha = 0.24,)
         
-    axis_instance_predictions.legend(
-        loc = 2,
-        fontsize = 9,
-        shadow = True,
-        bbox_to_anchor = (1.05, 1),
-        borderaxespad = 0.,
-        frameon = True,)
-    
+    # axis_instance_predictions.legend(
+    #     loc = 2,
+    #     fontsize = 9,
+    #     shadow = True,
+    #     bbox_to_anchor = (1.05, 1),
+    #     borderaxespad = 0.,
+    #     frameon = True,)
+
+    axis_instance_pysr_predictions.legend(
+        loc="center left",
+        fontsize=9,
+        shadow=True,
+        bbox_to_anchor=(1.05, 0.5),
+        borderaxespad=0.,
+        frameon=True
+    )
+
+    plt.subplots_adjust(right=0.75)
     figure_pysr_predictions.tight_layout()
 
     figure_pysr_predictions.savefig(
@@ -637,30 +655,36 @@ def run():
         color = "red",
         marker = 'o',)
 
-    colors = plt.cm.magma(np.linspace(0, 1, len(py_regressor_models.equations_)))
+    sorted_equations = sorted(py_regressor_models.equations_.itertuples(), key=lambda eq: eq.loss, reverse=True)
 
-    for index, (equation, color) in enumerate(zip(py_regressor_models.equations_.itertuples(), colors)):
+    colors = plt.cm.jet(np.linspace(0, 1, len(sorted_equations)))
+
+    for index, (equation, color) in enumerate(zip(sorted_equations, colors)):
 
         equation_complexity = equation.complexity
-        equation_latex = equation.sympy_format
+        equation_loss = equation.loss
+        # equation_latex = equation.sympy_format
+        simplified_equation = sp.simplify(equation.sympy_format)  # Simplify the equation
+        equation_latex = sp.latex(simplified_equation)  # Convert to LaTeX format
 
         y_pysr_median_predictions = py_regressor_models.predict(pd.DataFrame(training_x_data), index = index)
 
         plot_customization_pysr_predictions.add_line_plot(
             x_data = training_x_data,
             y_data = y_pysr_median_predictions,
-            label = fr"PySR (C = {equation_complexity}): $y(x) = {equation_latex}$",
+            label = fr"PySR (C = {equation_complexity}) (L = {equation_loss}): $y(x) = {equation_latex}$",
             color = color,
             linestyle = '-',
             alpha = 0.24,)
-        
-    axis_instance_predictions.legend(
-        loc = 2,
-        fontsize = 9,
-        shadow = True,
-        bbox_to_anchor = (1.05, 1),
-        borderaxespad = 0.,
-        frameon = True,)
+
+    axis_instance_pysr_predictions.legend(
+        loc="center left",
+        fontsize=9,
+        shadow=True,
+        bbox_to_anchor=(1.05, 0.5),
+        borderaxespad=0.,
+        frameon=True
+    )
     
     figure_pysr_predictions.tight_layout()
 
