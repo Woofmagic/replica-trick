@@ -162,9 +162,24 @@ cython_debug/
 #.idea/
 
 # Major files
+
+# TensorFlow (legacy) model file:
 *.h5
-*.csv
-*.png
+
+# TensorFlow model file:
 *.keras
 
+# These are sometimes huge:
+*.csv
+
+# Contains all the HUGE replicas --- we'll keep that local for now:
 /app/science/analysis/version_*/data/replicas/*.keras
+
+# Just has way too many things going on in it --- Remember: it's *one* plot per replica:
+/app/science/analysis/version_*/plots/losses/*.png
+
+# Same reason as above:
+/app/science/analysis/version_*/plots/fits/*.png
+
+# Same reason as above:
+/app/science/analysis/version_*/plots/pseudodata/*.png
