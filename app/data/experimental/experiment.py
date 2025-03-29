@@ -306,10 +306,10 @@ def conduct_experiment(experiment_name: str):
     # # Lorentzian:
     # underlying_symbolic_function = 1. / (sp.pi * 0.121 * (1. + ((sympy_symbol_x - (-0.117)) /  0.121)**2))
     # # Gaussian:
-    underlying_symbolic_function = sp.exp(- (sympy_symbol_x - 0.145)**2 / (0.214)**2) / (0.214 * sp.sqrt(2. * sp.pi))
+    # underlying_symbolic_function = sp.exp(- (sympy_symbol_x - 0.145)**2 / (0.214)**2) / (0.214 * sp.sqrt(2. * sp.pi))
     # Sigmoid:
-    # a1, b1 = 2.5, 0.1  # Adjust steepness and center shift
-    # underlying_symbolic_function = 3 / (1 + sp.exp(-a1 * (sympy_symbol_x - b1)))
+    a1, b1 = 2.5, 0.1  # Adjust steepness and center shift
+    underlying_symbolic_function = 3 / (1 + sp.exp(-a1 * (sympy_symbol_x - b1)))
     # # Bimodal Gaussian-like function:
     # a2, b2, c2 = 2.0, -0.5, 0.5
     # underlying_symbolic_function = a2 * (sp.exp(-((sympy_symbol_x - b2) / 0.3) ** 2) + sp.exp(-((sympy_symbol_x - c2) / 0.3) ** 2))
