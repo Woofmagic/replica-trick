@@ -304,9 +304,9 @@ def conduct_experiment(experiment_name: str):
     # # Quadratic
     # underlying_symbolic_function = 1.02 * sympy_symbol_x**2 - 2.78 * sympy_symbol_x + 3.4
     # # Lorentzian:
-    underlying_symbolic_function = 1. / (sp.pi * 0.121 * (1. + ((sympy_symbol_x - (-0.117)) /  0.121)**2))
+    # underlying_symbolic_function = 1. / (sp.pi * 0.121 * (1. + ((sympy_symbol_x - (-0.117)) /  0.121)**2))
     # # Gaussian:
-    # underlying_symbolic_function = sp.exp(- (sympy_symbol_x - 0.145)**2 / (0.214)**2) / (0.214 * sp.sqrt(2. * sp.pi))
+    underlying_symbolic_function = sp.exp(- (sympy_symbol_x - 0.145)**2 / (0.214)**2) / (0.214 * sp.sqrt(2. * sp.pi))
     # Sigmoid:
     # a1, b1 = 2.5, 0.1  # Adjust steepness and center shift
     # underlying_symbolic_function = 3 / (1 + sp.exp(-a1 * (sympy_symbol_x - b1)))
