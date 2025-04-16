@@ -1,0 +1,5 @@
+Welcome to the `science/analysis` directory!
+
+Here are all the "official tests" that we've run with PySR so far. They are all named `version_x`, and the `x` just keeps track of the chronology of the tests, i.e. which ones we did early in the analysis and later in the analysis. Explicitly, that means if you see `version_0`, `version_1`, and `version_2`, it means that we ran the test `version_2` after `version_1`, which was run after `version_0`.
+
+However, there is no other information you can glean from such a naming convention. (We regret not choosing a better one.) For example, you might want to know the *form* of the function that we are trying to discover with PySR; that information is not given in the file name. Therefore, we will tabulate below the "underlying functions" that were sought to discover in each version as a helpful reference.
