@@ -61,7 +61,7 @@ _SEARCH_SPACE_BINARY_OPERATORS = [
 ]
 
 _SEARCH_SPACE_UNARY_OPERATORS = [
-    "exp"
+    
 ]
 
 _SEARCH_SPACE_MAXIUMUM_COMPLEXITY = 25
@@ -302,18 +302,10 @@ def run():
             fname = f"{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/plots/pseudodata/generated_pseudodata_replica_{replica_index + 1}_v{_version_number}.png")
 
         input_x_value = Input(shape = (1, ), name = 'input_layer')
-        
-        # initializer = tf.keras.initializers.RandomUniform(
-        #     minval = -10.0,
-        #     maxval = 10.0,
-        #     seed = None)
-        
+
         # (3): Define the Model Architecture:
         x1 = Dense(32, activation = "relu")(input_x_value)
         x2 = Dense(16, activation = "relu")(x1)
-        # x3 = Dense(32, activation = "relu", kernel_initializer = initializer)(x2)
-        # x4 = Dense(16, activation = "relu", kernel_initializer = initializer)(x3)
-        # x5 = Dense(8, activation = "relu", kernel_initializer = initializer)(x4)
         output_y_value = Dense(1, activation = "linear", name = 'output_y_value')(x2)
 
         # (4): Define the model as as Keras Model:
@@ -323,7 +315,7 @@ def run():
             name = "basic_function_predictor")
         
         tensorflow_network.compile(
-            optimizer = keras.optimizers.Adam(learning_rate = 0.01),
+            optimizer = keras.optimizers.Adam(learning_rate = LEARNING_RATE),
             loss = tf.keras.losses.MeanSquaredError(),
             metrics = [
                 tf.keras.metrics.MeanSquaredError()

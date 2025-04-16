@@ -289,7 +289,7 @@ def conduct_experiment(experiment_name: str):
     """
 
     # (1): First, we determine how robust and serious our experiment is:
-    number_of_data_points = 100
+    number_of_data_points = 125
 
     # (2): We need to define a Sympy variable "x" that's our independent variable:
     sympy_symbol_x = sp.Symbol('x')
