@@ -1,4 +1,4 @@
-# Symbolic Regression Attempt #0:
+# Symbolic Regression Attempt #1:
 
 ## Introduction:
 
