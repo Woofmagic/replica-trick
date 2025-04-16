@@ -12,7 +12,7 @@ $$y(x) = 0.65 x - 0.18$$
 
 ## Experimental Details:
 
-The experiment generated $N = 20$ datapoints that were spaced equally distance along the $x-$axis in the interval $[-1, 1]$. We thought that by providing this much information to the neural network in this consistent manner that it would assist not only the training of the network but of the symbolic regression analysis as well.
+The experiment generated $N = 100$ datapoints that were spaced equally distance along the $x-$axis in the interval $[-1, 1]$. We thought that by providing this much information to the neural network in this consistent manner that it would assist not only the training of the network but of the symbolic regression analysis as well.
 
 ### Sampling Details:
 
