@@ -468,8 +468,8 @@ def conduct_experiment(experiment_name: str):
     sympy_symbols_list = [f"x_{i + 1}" for i in range(function_input_dimensionality)]
 
     # (4): Then, we need to define these symbols symbolically through their string representation:
-    sympy_symbols = sp.symbols(' '). join(sympy_symbols_list)
-
+    sympy_symbols = sp.symbols(' '.join(sympy_symbols_list))
+    
     # (3): We now specify how "difficult" our underlying function will be:
     DEPTH_PARAMETER = 4
 
