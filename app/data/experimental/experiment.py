@@ -18,6 +18,11 @@ from app.utilities.mathematics.sympy_function_generator import sympy_generate_ra
 
 from app.utilities.writing.latex_generation import generate_document
 
+plt.rcParams.update({
+    'text.usetex': True,
+    'font.family': "serif"
+})
+
 class ExperimentalSetup:
 
     def __init__(
@@ -41,7 +46,7 @@ class ExperimentalSetup:
         self._EXPERIMENTAL_END_VALUE = 1.0
         self._BASE_SMEAR_STANDARD_DEVIATION = 0.052
 
-        self._SYSTEMATIC_SHIFT_STD = 0.05 
+        self._SYSTEMATIC_SHIFT_STD = 0.05
         self._STOCHASTIC_NOISE_LOW = 0.09
         self._STOCHASTIC_NOISE_HIGH = 0.14
         self._WHITE_NOISE_TARGET_LEVEL = 0.09
@@ -259,6 +264,93 @@ class ExperimentalSetup:
         # (X): Officially set the class property containing the Pandas representation of the data:
         self.pandas_dataframe_of_experimental_data = pandas_dataframe_of_experimental_data
 
+    def plot_experimental_phase_space(self):
+        """
+        ## Description:
+        We make a plot to visualize the input space where the 
+        experimental data was sampled.
+        
+        ## Parameters:
+        Nothing!
+
+        ## Returns:
+        Nothing!
+        """
+
+        # (X): Obtain the input space dimension:
+        input_space_dimension = self.function_input_dimension
+
+        # (X): Obtain the value of the input space:
+        x_data = self.independent_variable_values
+
+        if input_space_dimension == 1:
+            
+            # (X): Set up the Figure instance
+            figure_instance, axis_instance = plt.subplots(figsize = (10, 2))
+        
+            # (X): Customize the Axes Object:
+            plot_customization = PlotCustomizer(
+                axis_instance,
+                title = f"E{self.experiment_name} Input Space (1D)",
+                xlabel = r"$x$",
+                ylabel = "")
+        
+            # (X): Add data to the Axes Object:
+            plot_customization.add_scatter_plot(
+                x_data = x_data.flatten(),
+                y_data = np.zeros_like(x_data),
+                color = 'blue',
+                markersize = 40)
+            
+            # (X): Save the figure:
+            figure_instance.savefig(f'E{self.experiment_name}_input_space.png')
+
+        elif input_space_dimension == 2:
+            
+            # (X): Set up the Figure instance
+            figure_instance, axis_instance = plt.subplots(figsize = (6, 6))
+        
+            # (X): Customize the Axes Object:
+            plot_customization = PlotCustomizer(
+                axis_instance,
+                title = f"E{self.experiment_name} Input Space (2D)",
+                xlabel = r"$x_1$",
+                ylabel = r"$x_2$")
+        
+            # (X): Add data to the Axes Object:
+            plot_customization.add_scatter_plot(
+                x_data = x_data[:, 0],
+                y_data = x_data[:, 1],
+                color = 'blue',
+                markersize = 40)
+            
+            # (X): Save the figure:
+            figure_instance.savefig(f'E{self.experiment_name}_input_space.png')
+
+        elif input_space_dimension == 3:
+            
+            # (X): Set up the Figure instance
+            figure_instance = plt.figure(figsize = (8, 6))
+            axis_instance = figure_instance.add_subplot(1, 1, 1, projection = "3d")
+        
+            # (X): Customize the Axes Object:
+            plot_customization = PlotCustomizer(
+                axis_instance,
+                title = f"E{self.experiment_name} Input Space (3D)",
+                xlabel = r"$x_1$",
+                ylabel = r"$x_2$",
+                zlabel = r"$x_3$")
+        
+            # (X): Add data to the Axes Object:
+            plot_customization.add_3d_scatter_plot(
+                x_data = x_data[:, 0],
+                y_data = x_data[:, 1],
+                y_data = x_data[:, 2],
+                color = 'blue')
+            
+            # (X): Save the figure:
+            figure_instance.savefig(f'E{self.experiment_name}_input_space.png')
+
     def plot_experimental_data(self, underlying_function):
         """
         ## Description:
@@ -281,7 +373,7 @@ class ExperimentalSetup:
         # (3): Customize the Axes Object:
         plot_customization = PlotCustomizer(
             axis_instance,
-            title = "E{} Raw Data".format(self.experiment_name),
+            title = f"E{self.experiment_name} Raw Data",
             xlabel = r"$x$",
             ylabel = r"$f(x)$")
         
@@ -339,7 +431,7 @@ class ExperimentalSetup:
 
         # (5): Add a line plot for the underlying function:
         plot_customization.add_line_plot(
-            x_data_range, 
+            x_data_range,
             underlying_function(x_data_range),
             color = 'black')
         
