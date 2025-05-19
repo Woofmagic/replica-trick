@@ -56,6 +56,19 @@ import pandas as pd
 # External Library | SymPy
 import sympy as sp
 
+SETTING_VERBOSE = True
+SETTING_DEBUG = True
+LEARNING_RATE = 0.005
+BATCH_SIZE_LOCAL_FITS = 32
+BATCH_SIZE_GLOBAL_FITS = 10
+EARLY_STOP_PATIENCE = 20
+LEARNING_RATE_PATIENCE = 20
+MODIFY_LR_FACTOR = 0.9
+SETTING_DNN_TRAINING_VERBOSE = 1
+
+NUMBER_OF_REPLICAS = 1
+EPOCHS = 500
+
 _SEARCH_SPACE_BINARY_OPERATORS = [
     "+", "-", "*", "/"
 ]
@@ -135,20 +148,23 @@ def get_next_version(base_path: str) -> str:
     then returns the next version path.
     """
 
+    # (X): 
     if not os.path.exists(base_path):
-        os.makedirs(base_path)  # Ensure the base path exists
+        os.makedirs(base_path)
     
-    # Regex to match 'version_x' pattern
+    # (X): 
     version_pattern = re.compile(r'version_(\d+)')
     
     existing_versions = []
-    print(os.listdir(base_path))
+    
     for entry in os.listdir(base_path):
         match = version_pattern.match(entry)
+
         if match:
             existing_versions.append(int(match.group(1)))
     
-    next_version = max(existing_versions, default=-1) + 1
+    next_version = max(existing_versions, default = -1) + 1
+    
     return next_version
 
 def generate_replica_data(
@@ -193,19 +209,6 @@ def split_data(x_data, y_data, y_error_data, split_percentage = 0.1):
 
     return train_X, test_X, train_y, test_y, train_yerr, test_yerr
 
-SETTING_VERBOSE = True
-SETTING_DEBUG = True
-LEARNING_RATE = 0.005
-BATCH_SIZE_LOCAL_FITS = 32
-BATCH_SIZE_GLOBAL_FITS = 10
-EARLY_STOP_PATIENCE = 20
-LEARNING_RATE_PATIENCE = 20
-MODIFY_LR_FACTOR = 0.9
-SETTING_DNN_TRAINING_VERBOSE = 1
-
-NUMBER_OF_REPLICAS = 100
-EPOCHS = 1000
-
 def run():
 
     _PATH_SCIENCE_ANALYSIS = 'app/science/analysis/'
@@ -213,7 +216,13 @@ def run():
     # Get next version directories
     _version_number = get_next_version(_PATH_SCIENCE_ANALYSIS)
 
-    print(f"> Determined next analysis directory: {_version_number}")
+    if SETTING_VERBOSE:
+        print(f"> Determined next analysis directory: {_version_number}")
+
+    DATA_FILE_NAME = f"E{_version_number}_raw_data.csv"
+
+    if SETTING_VERBOSE:
+        print(f"> Computed the name of the raw data file to be: {DATA_FILE_NAME}")
 
     os.makedirs(f'{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/data/raw')
     os.makedirs(f'{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/data/replicas')
@@ -232,38 +241,46 @@ def run():
 
         if len(tf.config.list_physical_devices()) != 0:
             for device in tensorflow_found_devices:
-                print(f"> TensorFlow detected device: {device}")
+                if SETTING_VERBOSE:
+                    print(f"> TensorFlow detected device: {device}")
 
         else:
-            print("> TensorFlow didn't find CPUs or GPUs...")
+            if SETTING_VERBOSE:
+                print("> TensorFlow didn't find CPUs or GPUs...")
 
     except Exception as error:
         print(f"> TensorFlow could not find devices due to error:\n> {error}")
 
-    print(f"> Now running TensorFlow Version {tf.version.VERSION}")
+    if SETTING_VERBOSE:
+        print(f"> Now running TensorFlow Version {tf.version.VERSION}")
 
     # (1): Nonsense for now
     kinematic_set_integer = 1
     
     # run_replica_method(kinematic_set_integer, number_of_replicas)
+
+    # (X): Conduct an experiment:
     experimental_x_data, experimental_y_data, experimental_y_error_data = conduct_experiment(_version_number)
 
     # (1): Begin iterating over the replicas:
     for replica_index in range(NUMBER_OF_REPLICAS):
         
-        DATA_FILE_NAME = f"E{_version_number}_raw_data.csv"
+        # (X): Rely on Pandas to correctly read the just-generated .csv file:
         this_replica_data_set = pd.read_csv(DATA_FILE_NAME)
 
+        # (X): For every replica, we generate associated replica data using `generate_replica_data`:
         pseudodata_dataframe = generate_replica_data(
             pandas_dataframe = this_replica_data_set,
             mean_value_column_name = 'y',
             stddev_column_name = 'y_error',
             new_column_name = 'y_pseudodata')
         
+        # (X): We also store the pseudodata/replica data for reproducability purposes:
         pseudodata_dataframe.to_csv(
             path_or_buf = f"{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/data/raw/pseudodata_replica_{replica_index+1}_data_v{_version_number}.csv",
             index_label = None)
 
+        # (X): Partition the replica data into training and testing data:
         training_x_data, testing_x_data, training_y_data, testing_y_data, training_y_error, testing_y_error = split_data(
             x_data = pseudodata_dataframe['x'],
             y_data = pseudodata_dataframe['y'],
@@ -320,12 +337,14 @@ def run():
             metrics = [
                 tf.keras.metrics.MeanSquaredError()
                 ])
-        
-        tensorflow_network.summary()
+
+        if SETTING_VERBOSE:        
+            tensorflow_network.summary()
 
         start_time_in_milliseconds = datetime.datetime.now().replace(microsecond = 0)
         
-        print(f"> Replica #{replica_index + 1} now running...")
+        if SETTING_VERBOSE:
+            print(f"> Replica #{replica_index + 1} now running...")
 
         history_of_training = tensorflow_network.fit(
             training_x_data,
@@ -339,28 +358,38 @@ def run():
             batch_size = BATCH_SIZE_LOCAL_FITS,
             verbose = SETTING_DNN_TRAINING_VERBOSE)
 
-        # (3): Construct the loss plot:
+        # (X): Extract the training loss info from the `history` dictionary with key "loss":
         training_loss_data = history_of_training.history['loss']
+
+        # (X): Validation loss information is also available in `history` dictionary because we used validation data:
         validation_loss_data = history_of_training.history['val_loss']
 
+        # (X): Use TF's `.evaluate()` to assess losses:
         validaton_loss, validation_mae = tensorflow_network.evaluate(testing_x_data, testing_y_data)
-        print(f'Validation Loss: {validaton_loss:.4f}, Validation MAE: {validation_mae:.4f}')
+        
+        if SETTING_VERBOSE:
+            print(f'Validation Loss: {validaton_loss:.4f}, Validation MAE: {validation_mae:.4f}')
 
+        # (X): We are 
         model_predictions = tensorflow_network.predict(training_x_data)
 
         try:
             tensorflow_network.save(f"{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/data/replicas/replica_number_{replica_index + 1}_v{_version_number}.keras")
-            print("> Saved replica!")
+            
+            if SETTING_VERBOSE:
+                print("> Saved replica!")
 
         except Exception as error:
             print(f"> Error saving replica:\n> {error}!")
             sys.exit(0)
 
-        print(f"> Replica #{replica_index + 1} finished running...")
+        if SETTING_VERBOSE:
+            print(f"> Replica #{replica_index + 1} finished running...")
     
         end_time_in_milliseconds = datetime.datetime.now().replace(microsecond = 0)
 
-        print(f"> Replica job finished in {end_time_in_milliseconds - start_time_in_milliseconds}ms.")
+        if SETTING_VERBOSE:
+            print(f"> Replica job finished in {end_time_in_milliseconds - start_time_in_milliseconds}ms.")
         
         # (1): Set up the Figure instance
         figure_instance_nn_loss = plt.figure(figsize = (18, 6))
