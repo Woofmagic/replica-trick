@@ -234,6 +234,17 @@ def sympy_generate_random_function(
     return result
 
 def sympy_lambdify_expression(
-        sympy_variable_x: sp.Symbol,
-        sympy_expression: sp.FunctionClass):
-    return sp.lambdify(sympy_variable_x, sympy_expression, 'numpy')
+        sympy_variables: list[sp.Symbol] | tuple[sp.Symbol, ...],
+        sympy_expression: sp.Expr):
+    """
+    ## Description:
+    Here, we assume you have defined (i) a collection of SymPy Symbols and
+    (ii) a SymPy expression composed of those symbols. Now, we simply turn
+    that SymPy function of those symbols into a Python function through
+    SymPy's lambdify function.
+
+    ## Arguments:
+    1. `sympy_variables` (sp.Symbol)
+    2. `sympy_expression` (int)
+    """
+    return sp.lambdify(sympy_variables, sympy_expression, 'numpy')

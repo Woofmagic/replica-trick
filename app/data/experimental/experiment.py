@@ -24,7 +24,9 @@ class ExperimentalSetup:
             self,
             experiment_name: str,
             number_of_data_points: int,
-            underlying_function):
+            underlying_function,
+            function_input_dimension: int,
+            function_output_dimension: int):
         """
         Initialize the experimental setup.
         """
@@ -32,17 +34,20 @@ class ExperimentalSetup:
         self.number_of_data_points = number_of_data_points
         self.underlying_function = underlying_function
 
+        self.function_input_dimension = function_input_dimension
+        self.function_output_dimension = function_output_dimension
+
         self._EXPERIMENTAL_START_VALUE = -1.0
         self._EXPERIMENTAL_END_VALUE = 1.0
         self._BASE_SMEAR_STANDARD_DEVIATION = 0.052
 
-        self._SYSTEMATIC_SHIFT_STD = 0.05  # Bias-induced shift in measurement
+        self._SYSTEMATIC_SHIFT_STD = 0.05 
         self._STOCHASTIC_NOISE_LOW = 0.09
-        self._STOCHASTIC_NOISE_HIGH = 0.14  # Random uniform noise
+        self._STOCHASTIC_NOISE_HIGH = 0.14
         self._WHITE_NOISE_TARGET_LEVEL = 0.09
-
-        self._INCREASE_ERRORS_AT_EDGES = False  # More uncertainty at edges
-        self._INCREASE_ERRORS_AT_PEAKS = False  # More uncertainty at high function values
+        
+        self._INCREASE_ERRORS_AT_EDGES = False 
+        self._INCREASE_ERRORS_AT_PEAKS = False 
 
         self._NUMBER_OF_DATA_POINTS_RICH = 1000
         self._NUMBER_OF_DATA_POINTS_MEDIUM = 200
@@ -333,7 +338,9 @@ def conduct_experiment(experiment_name: str):
     experiment_instance = ExperimentalSetup(
         experiment_name,
         number_of_data_points,
-        underlying_function)
+        underlying_function,
+        function_input_dimensionality,
+        function_output_dimensionality)
 
     # (7): We then conduct the experiment:
     experiment_instance.do_experiment()
