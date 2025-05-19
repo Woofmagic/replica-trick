@@ -260,7 +260,17 @@ def sympy_generate_random_function(
         else:
 
             # (X): We find the two inputs to the B(•, •) operator:
-            first_chosen_expression, second_chosen_expression = random.sample(available_expressions, 2)
+            if len(available_expressions) >= 2:
+                first_chosen_expression, second_chosen_expression = random.sample(
+                    population = available_expressions,
+                    k = 2)
+                
+            elif len(available_expressions) == 1:
+                first_chosen_expression = available_expressions[0]
+                second_chosen_expression = available_expressions[0]
+            
+            else:
+                raise ValueError("No expressions available for binary operation.")
             
             # (X): Perform a set union...
             used_independent_variables.update(set([

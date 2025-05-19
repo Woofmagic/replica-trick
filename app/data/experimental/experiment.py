@@ -54,7 +54,7 @@ class ExperimentalSetup:
         self._INCREASE_ERRORS_AT_EDGES = False
         self._INCREASE_ERRORS_AT_PEAKS = False
 
-        self._USING_EQUIDISTANT_POINTS = False
+        self._USING_EQUIDISTANT_POINTS = True
 
         self.independent_variable_values = np.array([])
         self.pure_experimental_values = np.array([])
@@ -78,8 +78,6 @@ class ExperimentalSetup:
                 self._EXPERIMENTAL_START_VALUE,
                 self._EXPERIMENTAL_END_VALUE,
                 equidistant_points))
-            
-            print("here")
             
         else:
 
@@ -148,7 +146,14 @@ class ExperimentalSetup:
         # dy = sigma_y * rand_y
         # dy = np.maximum(dy, sigma_y)
 
-        dy = np.abs(np.random.normal(self._BASE_SMEAR_STANDARD_DEVIATION, 0.))
+        dy = np.abs(np.random.normal(
+            loc = self._BASE_SMEAR_STANDARD_DEVIATION,
+            scale = 0.,
+            size = self.number_of_data_points))
+        
+        if self.function_output_dimension > 1:
+            dy = np.tile(dy[:, np.newaxis], (1, self.function_output_dimension))
+        
         return dy
 
     def _generate_experimental_data(self):
@@ -156,11 +161,15 @@ class ExperimentalSetup:
         Generate realistic varying errors for each data point.
         """
         # (1): Add a Gaussian smear to the pure (true) values --- this turns true data into "experimental data":
-        gaussian_component = np.random.normal(self.pure_experimental_values, self._BASE_SMEAR_STANDARD_DEVIATION)
+        gaussian_component = np.random.normal(
+            loc = self.pure_experimental_values,
+            scale = self._BASE_SMEAR_STANDARD_DEVIATION)
 
         # (2): Compute a Gaussian noise to be added on top of the experimental data:
         # stochastic_component = np.random.uniform(self._STOCHASTIC_NOISE_LOW, self._STOCHASTIC_NOISE_HIGH, size = len(self.pure_experimental_values))
-        stochastic_component = np.random.uniform(-self._STOCHASTIC_NOISE_LOW, self._STOCHASTIC_NOISE_LOW, size = len(self.pure_experimental_values))
+        stochastic_component = np.random.uniform(
+            low = -self._STOCHASTIC_NOISE_LOW,
+            high = self._STOCHASTIC_NOISE_LOW)
         # stochastic_component = np.random.normal(
         #     loc = 0., 
         #     # Below comes from Equation ?? on pg. 16 from: https://pmc.ncbi.nlm.nih.gov/articles/PMC11074949/pdf/nihms-1824079.pdf
@@ -239,7 +248,7 @@ class ExperimentalSetup:
         if self.function_input_dimension == 1:
 
             # (X): ... we can just call that variable "x" and get it over with:
-            dictionary_of_data["x"] = self.independent_variable_values
+            dictionary_of_data["x"] = self.independent_variable_values.flatten()
 
         # (X): If n > 1...
         else:
@@ -255,8 +264,6 @@ class ExperimentalSetup:
 
         # (X): Add the error data to the dictionary with key "y_error":
         dictionary_of_data["y_error"] = self.experimental_errors.flatten()
-
-        print(dictionary_of_data)
 
         # (X): Create DataFrame and write to CSV
         pandas_dataframe_of_experimental_data = pd.DataFrame(dictionary_of_data)
@@ -485,7 +492,7 @@ def conduct_experiment(experiment_name: str):
 
 
     # (3): We now specify how "difficult" our underlying function will be:
-    DEPTH_PARAMETER = 4
+    DEPTH_PARAMETER = 2
 
     # (4): Next, we generate the underlying function (symbolically, in Sympy):
     underlying_symbolic_function = sympy_generate_random_function(sympy_symbols, DEPTH_PARAMETER)
@@ -511,7 +518,7 @@ def conduct_experiment(experiment_name: str):
     underlying_function = sympy_lambdify_expression(sympy_symbols, underlying_symbolic_function)
 
     # (1): First, we determine how robust and serious our experiment is:
-    number_of_data_points = 125
+    number_of_data_points = 11
 
     # (6): Finally, we set up the Experiment:
     experiment_instance = ExperimentalSetup(
