@@ -5,19 +5,16 @@ def nth_degree_polynomial(
         x: float, 
         list_of_polynomial_coefficients: list) -> float:
     """
-    # Description
-    --------------
+    ## Description
     Calculate the value of an N-th degree polynomial at x.
     
-    # Parameters
-    --------------
+    ## Parameters
     :param x: The input value where the polynomial is evaluated.
 
     :param coefficients: A list of coefficients [a_0, a_1, ..., a_N] where 
         a_i is the coefficient for the x^i term.
 
-    # Returns
-    --------------
+    ## Returns
 
     :return: The value of the polynomial at x.
     """
@@ -33,20 +30,17 @@ def nth_degree_polynomial(
 # Functions | Logarithm:
 def logarithmic_function(x: float, parameter_A: float, parameter_B: float):
     """
-    # Description
-    --------------
+    ## Description
     Calculate the logarithmic function A * ln(B * x).
     
-    # Parameters
-    --------------
+    ## Parameters
     :param x: The input value(s) where the function is evaluated (can be a numpy array).
 
     :param A: The scaling factor for the output.
 
     :param B: The scaling factor for the input.
 
-    # Returns
-    --------------
+    ## Returns
     :return: The result of the logarithmic function.
     """
     
@@ -58,20 +52,17 @@ def logarithmic_function(x: float, parameter_A: float, parameter_B: float):
 # Functions | Exponential:
 def exponential_function(x: float, parameter_A: float, parameter_B: float) -> float:
     """
-    # Description:
-    --------------
+    ## Description:
     Calculate the exponential function A * e^(B * x).
     
-    # Parameters:
-    --------------
+    ## Parameters:
     :param x: The input value(s) where the function is evaluated (can be a numpy array).
 
     :param A: The scaling factor for the output.
 
     :param B: The scaling factor for the input.
 
-    # Returns
-    --------------
+    ## Returns
     :return: The result of the exponential function.
     """
     try:
@@ -82,12 +73,10 @@ def exponential_function(x: float, parameter_A: float, parameter_B: float) -> fl
 # Functions | Sine:
 def sine_function(x: float, parameter_A: float, parameter_B: float, parameter_C: float) -> float:
     """
-    # Description:
-    --------------
+    ## Description:
     Calculate the sinusoidal function A * sin(B * x + C).
     
-    # Parameters:
-    --------------
+    ## Parameters:
     :param x: The input value(s) where the function is evaluated (can be a numpy array).
 
     :param A: The amplitude of the sine wave.
@@ -96,8 +85,7 @@ def sine_function(x: float, parameter_A: float, parameter_B: float, parameter_C:
 
     :param C: The phase shift.
 
-    # Returns
-    --------------
+    ## Returns
     :return: The result of the sinusoidal function.
     """
     try:
@@ -108,12 +96,10 @@ def sine_function(x: float, parameter_A: float, parameter_B: float, parameter_C:
 # Functions | Cosine:
 def cosine_function(x: float, parameter_A: float, parameter_B: float, parameter_C: float) -> float:
     """
-    # Description:
-    --------------
+    ## Description:
     Calculate the cosine function A * cos(B * x + C).
     
-    # Parameters:
-    --------------
+    ## Parameters:
     :param x: The input value(s) where the function is evaluated (can be a numpy array).
 
     :param A: The amplitude of the sine wave.
@@ -122,8 +108,7 @@ def cosine_function(x: float, parameter_A: float, parameter_B: float, parameter_
 
     :param C: The phase shift.
 
-    # Returns:
-    --------------
+    ## Returns:
     :return: The result of the cosine function.
     """
     try:
@@ -134,12 +119,10 @@ def cosine_function(x: float, parameter_A: float, parameter_B: float, parameter_
 # Functions | Tangent:
 def tangent_function(x: float, parameter_A: float, parameter_B: float, parameter_C: float) -> float:
     """
-    # Description:
-    --------------
+    ## Description:
     Calculate the sinusoidal function A * tan(B * x + C).
     
-    # Parameters:
-    --------------
+    ## Parameters:
     :param x: The input value(s) where the function is evaluated (can be a numpy array).
 
     :param A: The amplitude of the sine wave.
@@ -148,8 +131,7 @@ def tangent_function(x: float, parameter_A: float, parameter_B: float, parameter
 
     :param C: The phase shift.
 
-    # Returns:
-    --------------
+    ## Returns:
     :return: The result of the sinusoidal function.
     """
     try:
@@ -157,20 +139,39 @@ def tangent_function(x: float, parameter_A: float, parameter_B: float, parameter
     except Exception as ERROR:
         return 0.
     
-def generate_random_function(x_data, depth: int) -> float:
+def generate_random_function(x_data, desired_form: str, depth: int) -> float:
     
     functions = [exponential_function, logarithmic_function, sine_function, cosine_function]
 
     result = x_data.copy()
-    
-    for iteration in range(depth):
-        func_idx = np.random.randint(0, len(functions)) 
-        function = functions[func_idx]
-        num_args = function.__code__.co_argcount 
-        print(f"> Number of arguments of {function.__name__} is {num_args}")
-        params = np.random.uniform(1, 1, size = num_args - 2)  # Generate random parameters
-        print(params)
-        result = function(result, 1, *params)  # Apply the chosen function to the result using *params
 
-    print(result)
-    return result
+    if desired_form is not None:
+
+        return exponential_function(result, 1., 2.)
+
+    if desired_form is None:
+    
+        # (X): Set up the for-loop defining the depth:
+        for _ in range(depth):
+
+            # (X): Select a RANDOM index that will define the UNARY function:
+            function_index = np.random.randint(0, len(functions))
+
+            # (X): Use that RANDOM index to index a list of Python functions that represent the mathematical function:
+            function = functions[function_index]
+
+            # (X): Access "metadata" that tells us how many parameters may be involved in a given function:
+            number_of_function_arguments = function.__code__.co_argcount
+
+            # (X):
+            print(f"> Number of arguments of {function.__name__} is {number_of_function_arguments}")
+
+            # (X):
+            function_parameters = np.random.uniform(1, 1, size = number_of_function_arguments - 2)
+            print(function_parameters)
+
+            # (X): Actually *evaluate* the function with the "result" and the randomized parameters:
+            result = function(result, 1, *function_parameters)
+
+        print(result)
+        return result
