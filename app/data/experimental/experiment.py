@@ -79,6 +79,8 @@ class ExperimentalSetup:
                 self._EXPERIMENTAL_END_VALUE,
                 equidistant_points))
             
+            print("here")
+            
         else:
 
             # (X): Compute the points per dimension:
@@ -237,7 +239,7 @@ class ExperimentalSetup:
         if self.function_input_dimension == 1:
 
             # (X): ... we can just call that variable "x" and get it over with:
-            dictionary_of_data["x"] = self.independent_variable_values.flatten()
+            dictionary_of_data["x"] = self.independent_variable_values
 
         # (X): If n > 1...
         else:
@@ -253,6 +255,8 @@ class ExperimentalSetup:
 
         # (X): Add the error data to the dictionary with key "y_error":
         dictionary_of_data["y_error"] = self.experimental_errors.flatten()
+
+        print(dictionary_of_data)
 
         # (X): Create DataFrame and write to CSV
         pandas_dataframe_of_experimental_data = pd.DataFrame(dictionary_of_data)
@@ -467,9 +471,19 @@ def conduct_experiment(experiment_name: str):
     # (3): Define a list of "derived" strings of the form x_{i} for the i-th independent variable:
     sympy_symbols_list = [f"x_{i + 1}" for i in range(function_input_dimensionality)]
 
-    # (4): Then, we need to define these symbols symbolically through their string representation:
-    sympy_symbols = sp.symbols(' '.join(sympy_symbols_list))
-    
+    # (4): We need to construct *iterable* types of Sympy symbols:
+    if function_input_dimensionality == 1:
+
+        # (X): 
+        sympy_symbols = (sp.Symbol('x1'),)
+
+    # (X): If n > 1...
+    else:
+
+        # (X): ...
+        sympy_symbols = sp.symbols(' '.join(sympy_symbols_list))
+
+
     # (3): We now specify how "difficult" our underlying function will be:
     DEPTH_PARAMETER = 4
 
