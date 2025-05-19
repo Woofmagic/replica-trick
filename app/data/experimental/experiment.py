@@ -345,11 +345,15 @@ class ExperimentalSetup:
             plot_customization.add_3d_scatter_plot(
                 x_data = x_data[:, 0],
                 y_data = x_data[:, 1],
-                y_data = x_data[:, 2],
+                z_data = x_data[:, 2],
                 color = 'blue')
             
             # (X): Save the figure:
             figure_instance.savefig(f'E{self.experiment_name}_input_space.png')
+
+        else:
+
+            raise NotImplementedError("> We have not yet implemented n > 3 input space visualization.")
 
     def plot_experimental_data(self, underlying_function):
         """
@@ -508,6 +512,8 @@ def conduct_experiment(experiment_name: str):
 
     # (8): When the experiment has finished, we write a file containing the raw data:
     experiment_instance.write_raw_data()
+
+    experiment_instance.plot_experimental_phase_space()
 
     # (9): Once the experiment has finished, we construct the "raw data" plot (contains uncertainty)
     experiment_instance.plot_experimental_data(underlying_function)
