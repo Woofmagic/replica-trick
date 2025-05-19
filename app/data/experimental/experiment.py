@@ -46,12 +46,9 @@ class ExperimentalSetup:
         self._STOCHASTIC_NOISE_HIGH = 0.14
         self._WHITE_NOISE_TARGET_LEVEL = 0.09
 
-        self._INCREASE_ERRORS_AT_EDGES = False 
-        self._INCREASE_ERRORS_AT_PEAKS = False 
+        self._INCREASE_ERRORS_AT_EDGES = False
+        self._INCREASE_ERRORS_AT_PEAKS = False
 
-        self._NUMBER_OF_DATA_POINTS_RICH = 1000
-        self._NUMBER_OF_DATA_POINTS_MEDIUM = 200
-        self._NUMBER_OF_DATA_POINTS_SPARSE = 40
         self._USING_EQUIDISTANT_POINTS = False
 
         self.independent_variable_values = np.array([])
@@ -64,25 +61,72 @@ class ExperimentalSetup:
         """
         Generate equidistant x-values.
         """
-        # (1): Calculate the range of the experiment:
-        experimental_range = self._EXPERIMENTAL_END_VALUE - self._EXPERIMENTAL_START_VALUE
 
-        equidistant_points = experimental_range / self.number_of_data_points
+        if self.function_input_dimension == 1:
 
-        return np.sort(np.arange(
-            self._EXPERIMENTAL_START_VALUE,
-            self._EXPERIMENTAL_END_VALUE,
-            equidistant_points))
+            # (1): Calculate the range of the experiment:
+            experimental_range = self._EXPERIMENTAL_END_VALUE - self._EXPERIMENTAL_START_VALUE
+
+            equidistant_points = experimental_range / self.number_of_data_points
+
+            independent_variable_values = np.sort(np.arange(
+                self._EXPERIMENTAL_START_VALUE,
+                self._EXPERIMENTAL_END_VALUE,
+                equidistant_points))
+            
+        else:
+
+            # (X): Compute the points per dimension:
+            points_per_dimension = int(np.ceil(self.number_of_data_points ** (1 / self.function_input_dimension)))
+
+            # (X): List of linspaces across each dimension:
+            axis_values = [
+                np.linspace(self._EXPERIMENTAL_START_VALUE,
+                            self._EXPERIMENTAL_END_VALUE,
+                            points_per_dimension)
+                for _ in range(self.function_input_dimension)
+            ]
+
+            # (X): Make meshgrid by unpacking the array we made earlier:
+            meshgrid = np.meshgrid(*axis_values, indexing='ij')
+
+            # (X): Stack the meshgrid arrays
+            grid_points = np.stack(meshgrid, axis = -1).reshape(-1, self.function_input_dimension)
+
+            # (X): Possibility of generating too many data points, so...
+            if grid_points.shape[0] > self.number_of_data_points:
+
+                # (X): ... we trim the array:
+                independent_variable_values = grid_points[:self.number_of_data_points]
+
+        # (X): Return the array:
+        return independent_variable_values
 
     def _generate_nonuniform_x_values(self):
         """
-        Generate x values with non-uniform spacing.
+        ## Description:
+        Generate non-uniformly spaced x-values for arbitrary input dimensions.
+        Each point is sampled independently in [-1, 1]^n.
+
+        ## Returns:
+        Array of shape varying depending on number of input dimensions.
+        If n = 1: (number_of_data_points, 1)
+        If n > 1: (number_of_data_points, n)
+
         """
-        return np.sort(
-            np.random.uniform(
+        if self.function_input_dimension == 1:
+
+            return np.sort(
+                np.random.uniform(
+                    low = self._EXPERIMENTAL_START_VALUE,
+                    high = self._EXPERIMENTAL_END_VALUE,
+                    size = self.number_of_data_points)).reshape(-1, 1)
+        else:
+
+            return np.random.uniform(
                 low = self._EXPERIMENTAL_START_VALUE,
                 high = self._EXPERIMENTAL_END_VALUE,
-                size = self.number_of_data_points))
+                size = (self.number_of_data_points, self.function_input_dimension))
     
     def _generate_variable_errors(self):
         """
@@ -180,14 +224,39 @@ class ExperimentalSetup:
         ## Description:
         Save the generated experimental data to a CSV file.
         """
-        pandas_dataframe_of_experimental_data = pd.DataFrame(
-            data = {
-                "x": self.independent_variable_values,
-                "y": self.dependent_variable_values,
-                "y_error": self.experimental_errors
-            })
 
-        pandas_dataframe_of_experimental_data.to_csv(f'E{self.experiment_name}_raw_data.csv', index_label = 'index')
+        # (1): Initialize a dictionary to hold all RAW data first:
+        dictionary_of_data = {}
+
+        # (X): If n = 1...
+        if self.function_input_dimension == 1:
+
+            # (X): ... we can just call that variable "x" and get it over with:
+            dictionary_of_data["x"] = self.independent_variable_values.flatten()
+
+        # (X): If n > 1...
+        else:
+
+            # (X): ... we initialize a loop over each dimension, and...
+            for i in range(self.function_input_dimension):
+
+                # (X): ...label independent variables with x_{i + 1}
+                dictionary_of_data[f"x_{i + 1}"] = self.independent_variable_values[:, i]
+
+        # (X): Add the measured value to the dictionary with key "y":
+        dictionary_of_data["y"] = self.dependent_variable_values.flatten()
+
+        # (X): Add the error data to the dictionary with key "y_error":
+        dictionary_of_data["y_error"] = self.experimental_errors.flatten()
+
+        # (X): Create DataFrame and write to CSV
+        pandas_dataframe_of_experimental_data = pd.DataFrame(dictionary_of_data)
+
+        # (X): Turn the Pandas DF into a .csv file:
+        pandas_dataframe_of_experimental_data.to_csv(
+            f'E{self.experiment_name}_raw_data.csv', index_label='index')
+
+        # (X): Officially set the class property containing the Pandas representation of the data:
         self.pandas_dataframe_of_experimental_data = pandas_dataframe_of_experimental_data
 
     def plot_experimental_data(self, underlying_function):
@@ -306,16 +375,16 @@ def conduct_experiment(experiment_name: str):
     sympy_symbols = sp.symbols(' '). join(sympy_symbols_list)
 
     # (3): We now specify how "difficult" our underlying function will be:
-    DEPTH_PARAMETER = 2
+    DEPTH_PARAMETER = 4
 
     # (4): Next, we generate the underlying function (symbolically, in Sympy):
-    # underlying_symbolic_function = sympy_generate_random_function(sympy_symbol_x, DEPTH_PARAMETER)
+    underlying_symbolic_function = sympy_generate_random_function(sympy_symbols, DEPTH_PARAMETER)
     # # Linear:
     # underlying_symbolic_function = 0.65 * sympy_symbol_x - 0.18
     # # Quadratic
     # underlying_symbolic_function = 1.02 * sympy_symbol_x**2 - 2.78 * sympy_symbol_x + 3.4
     # # Lorentzian:
-    underlying_symbolic_function = 1. / (sp.pi * 0.121 * (1. + ((sympy_symbol_x - (-0.117)) /  0.121)**2))
+    # underlying_symbolic_function = 1. / (sp.pi * 0.121 * (1. + ((sympy_symbol_x - (-0.117)) /  0.121)**2))
     # # Gaussian:
     # underlying_symbolic_function = sp.exp(- (sympy_symbol_x - 0.145)**2 / (0.214)**2) / (0.214 * sp.sqrt(2. * sp.pi))
     # Sigmoid:
