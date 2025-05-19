@@ -45,7 +45,7 @@ class ExperimentalSetup:
         self._STOCHASTIC_NOISE_LOW = 0.09
         self._STOCHASTIC_NOISE_HIGH = 0.14
         self._WHITE_NOISE_TARGET_LEVEL = 0.09
-        
+
         self._INCREASE_ERRORS_AT_EDGES = False 
         self._INCREASE_ERRORS_AT_PEAKS = False 
 
@@ -329,7 +329,7 @@ def conduct_experiment(experiment_name: str):
     # underlying_symbolic_function = a3 * sp.cos(b3 * sp.pi * sympy_symbol_x)
 
     # (5): We obtain a "Python understandable" function of the symbolic function above:
-    underlying_function = sympy_lambdify_expression(sympy_symbol_x, underlying_symbolic_function)
+    underlying_function = sympy_lambdify_expression(sympy_symbols, underlying_symbolic_function)
 
     # (1): First, we determine how robust and serious our experiment is:
     number_of_data_points = 125

@@ -1,3 +1,5 @@
+
+import random
 import numpy as np
 import sympy as sp
 
@@ -174,7 +176,7 @@ def sympy_tangent_function(
         return 0.
     
 def sympy_generate_random_function(
-        sympy_variable_x: sp.Symbol,
+        sympy_symbols: sp.Symbol,
         depth: int) -> sp.Function:
     """
     ## Description:
@@ -183,10 +185,11 @@ def sympy_generate_random_function(
     function composition we perform.
 
     ## Arguments:
-    1. `sympy_variable_x` (sp.Symbol)
+    1. `sympy_symbols` (sp.Symbol)
     2. `depth` (int)
     """
     
+    # (X): List of available (unary) functions:
     functions = [
         sympy_constant_function,
         sympy_nth_degree_polynomial,
@@ -196,42 +199,100 @@ def sympy_generate_random_function(
         sympy_cosine_function,
         # sympy_tangent_function
         ]
-
-    result = sympy_variable_x
     
+    # (X): Initalize a set object to store unique elements:
+    used_independent_variables = set()
+
+    # (X): Cast the SymPy tuple of symbols into a list:
+    available_expressions = list(sympy_symbols)
+    
+    # (X): Initialize the expression tree generation:
     for _ in range(depth):
 
-        # (1): Choose a random function from the list `functions`:
-        function_index = np.random.randint(0, len(functions))
+        # (X): In generating the expression tree, we choose either U(•) or B(•, •) operators:
+        operation_type = np.random.choice(['unary', 'binary'])
 
-        # (2): Ascertain the corresponding *function* from the list! 
-        function = functions[function_index]
+        # (X): In U(•) operations, we need a single input:
+        if operation_type == 'unary':
 
-        # (3.1): If the function is a nth-degree polynomial, we need to be fancy in handling it:
-        if function == sympy_nth_degree_polynomial:
+            # (X): Select a random expression:
+            chosen_expression = np.random.choice(available_expressions)
 
-            # (3.1.1): Randomly choose the degree of the polynomial: (1 ≤ n ≤ 4)
-            polynomial_degree = np.random.randint(2, 5)
+            # (X): Compare if the expression *is or is not* a "primitive" SymPy symbol:
+            if chosen_expression in sympy_symbols:
 
-            # (3.1.2): ...
-            coefficients = np.round(np.random.uniform(-5, 5, size = polynomial_degree + 1)) 
+                # (X): If the selection *is* a primitive symbol, add this symbol as "used":
+                used_independent_variables.add(chosen_expression)
 
-            # (3.1.3):
-            result = function(result, polynomial_degree, *coefficients)
-        
-        # (3.2): Otherwise, functions only come with finite and determined number of parameters:
+            # (X): Choose a random function from the list `functions`:
+            function_index = np.random.randint(0, len(functions))
+
+            # (x): Ascertain the corresponding *function* from the list!
+            function = functions[function_index]
+
+            # (X.1): If the function is a nth-degree polynomial, we need to be fancy in handling it:
+            if function == sympy_nth_degree_polynomial:
+
+                # (3.1.1): Randomly choose the degree of the polynomial: (1 ≤ n ≤ 4)
+                polynomial_degree = np.random.randint(2, 5)
+
+                # (3.1.2): ...
+                coefficients = np.round(np.random.uniform(-5, 5, size = polynomial_degree + 1)) 
+
+                # (3.1.3):
+                new_expression = function(chosen_expression, polynomial_degree, *coefficients)
+            
+            # (3.2): Otherwise, functions only come with finite and determined number of parameters:
+            else:
+
+                # (3.2.1): Obtain the number of arguments (mathspeak: parameters) required for each function:
+                number_of_arguments_per_function = function.__code__.co_argcount
+
+                # (3.2.2): Using the number of parameters, choose them randomly from the interval [-5, 5] to parametrize the function:
+                function_parameters = np.round(np.random.uniform(-5, 5, size = number_of_arguments_per_function - 2))
+
+                # (3.2.3): Obtain the result by passing in the required arguments:
+                new_expression = function(chosen_expression, 1, *function_parameters)
+            
+            available_expressions.append(new_expression)
+
+        # (X): In B(•, •) operations, we need two inputs:
         else:
 
-            # (3.2.1): Obtain the number of arguments (mathspeak: parameters) required for each function:
-            number_of_arguments_per_function = function.__code__.co_argcount
+            # (X): We find the two inputs to the B(•, •) operator:
+            first_chosen_expression, second_chosen_expression = random.sample(available_expressions, 2)
+            
+            # (X): Perform a set union...
+            used_independent_variables.update(set([
+                first_chosen_expression,
+                second_chosen_expression
+                ]) & set(sympy_symbols))
 
-            # (3.2.2): Using the number of parameters, choose them randomly from the interval [-5, 5] to parametrize the function:
-            function_parameters = np.round(np.random.uniform(-5, 5, size = number_of_arguments_per_function - 2))
+            # (X): Chose a random arithmetic operation between the two:
+            chosen_binary_operation = np.random.choice([sp.Add, sp.Mul, sp.Pow])
+            
+            # (X): Actually perform the binary operation:            
+            new_expression = chosen_binary_operation(first_chosen_expression, second_chosen_expression)
+            
+            # (X): Add the resultant expression to the list:
+            available_expressions.append(new_expression)
 
-            # (3.2.3): Obtain the result by passing in the required arguments:
-            result = function(result, 1, *function_parameters)
+    # (X): The last element of `available_expressions` is the most recently-updated expression:
+    final_expression = available_expressions[-1]
 
-    return result
+    # (X): "set quotient" (?) to determine if the loop missed any independent variables:
+    unused_variable = set(sympy_symbols) - used_independent_variables   
+
+    # (X): If there *are* unused variables:
+    if unused_variable is not None:
+
+        # (X): Initialize iteration over unused variables...
+        for unused_variable in unused_variable:
+
+            # (X): ...and force their inclusion into the final expression:
+            final_expression += unused_variable
+
+    return final_expression
 
 def sympy_lambdify_expression(
         sympy_variables: list[sp.Symbol] | tuple[sp.Symbol, ...],
