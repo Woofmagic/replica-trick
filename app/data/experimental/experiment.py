@@ -107,7 +107,7 @@ class ExperimentalSetup:
         stochastic_component = np.random.uniform(-self._STOCHASTIC_NOISE_LOW, self._STOCHASTIC_NOISE_LOW, size = len(self.pure_experimental_values))
         # stochastic_component = np.random.normal(
         #     loc = 0., 
-        #     # Below comes from EquATION ?? on pg. 16 from: https://pmc.ncbi.nlm.nih.gov/articles/PMC11074949/pdf/nihms-1824079.pdf
+        #     # Below comes from Equation ?? on pg. 16 from: https://pmc.ncbi.nlm.nih.gov/articles/PMC11074949/pdf/nihms-1824079.pdf
         #     scale = self._WHITE_NOISE_TARGET_LEVEL * np.sqrt(len(self.pure_experimental_values) * np.sum(self.pure_experimental_values**2)),
         #     size = len(self.pure_experimental_values))
 
@@ -287,12 +287,18 @@ def conduct_experiment(experiment_name: str):
 
     ## Notes:
     """
+    
+    # (1): We need to determine the numebr of independent variables of the unknown functin:
+    function_input_dimensionality = 1
 
-    # (1): First, we determine how robust and serious our experiment is:
-    number_of_data_points = 125
+    # (2): We need to determine number of outputs of our unknown function:
+    function_output_dimensionality = 1
 
-    # (2): We need to define a Sympy variable "x" that's our independent variable:
-    sympy_symbol_x = sp.Symbol('x')
+    # (3): Define a list of "derived" strings of the form x_{i} for the i-th independent variable:
+    sympy_symbols_list = [f"x_{i + 1}" for i in range(function_input_dimensionality)]
+
+    # (4): Then, we need to define these symbols symbolically through their string representation:
+    sympy_symbols = sp.symbols(' '). join(sympy_symbols_list)
 
     # (3): We now specify how "difficult" our underlying function will be:
     DEPTH_PARAMETER = 2
@@ -319,6 +325,9 @@ def conduct_experiment(experiment_name: str):
 
     # (5): We obtain a "Python understandable" function of the symbolic function above:
     underlying_function = sympy_lambdify_expression(sympy_symbol_x, underlying_symbolic_function)
+
+    # (1): First, we determine how robust and serious our experiment is:
+    number_of_data_points = 125
 
     # (6): Finally, we set up the Experiment:
     experiment_instance = ExperimentalSetup(
