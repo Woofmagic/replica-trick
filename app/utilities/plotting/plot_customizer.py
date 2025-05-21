@@ -83,11 +83,11 @@ class PlotCustomizer:
 
     def add_line_plot(self, x_data, y_data, label: str = "", color = None, linestyle = '-', alpha = 1.0):
         """
+        ## Description:
         Add a line plot to the Axes object:
         connects element-wise points of the two provided arrays.
 
-        Parameters
-        ----------
+        ## Parameters:
         x_data: array_like
             
         y_data: array_like
@@ -109,11 +109,13 @@ class PlotCustomizer:
 
     def add_fill_between_plot(self, x_data, lower_y_data, upper_y_data, label: str = "", color = None, linestyle = '-', alpha = 1.0):
         """
-        Add a line plot to the Axes object:
-        connects element-wise points of the two provided arrays.
+        ## Description:
+        Add a fill-between plot to the Axes object. You must
+        supply the "lower data" and the "upper  data" in order
+        for the plot to *fill between* the two.
 
-        Parameters
-        ----------
+        ## Parameters:
+
         x_data: array_like
             
         lower_y_data: array_like
@@ -129,9 +131,9 @@ class PlotCustomizer:
 
         with rc_context(rc = self._custom_rc_params):
 
-            # (1): Just add the line plot:
+            # (1): Add the fill-between plot:
             self.axes_object.fill_between(
-                x_data, 
+                x_data,
                 lower_y_data,
                 upper_y_data,
                 label = label,
@@ -144,10 +146,11 @@ class PlotCustomizer:
 
     def add_scatter_plot(self, x_data, y_data, label: str = "", color = None, marker = 'o', markersize = None):
         """
+        ## Description:
         Add a scatter plot to the Axes object.
 
-        Parameters
-        ----------
+        ## Parameters:
+
         x_data: array_like
             
         y_data: array_like
@@ -214,7 +217,7 @@ class PlotCustomizer:
                 label = label,
                 color = color,
                 marker = marker,
-                linestyle = '', 
+                linestyle = '',
                 markersize = 3.0,
                 ecolor = 'black',
                 elinewidth = 0.5,
@@ -234,16 +237,41 @@ class PlotCustomizer:
             if label:
                 self.axes_object.legend()
 
-    def add_3d_scatter_plot(self, x_data, y_data, z_data, color = None, marker = 'o'):
+    def add_3d_scatter_plot(
+            self,
+            x_data,
+            y_data,
+            z_data,
+            color = None,
+            marker = 'o',
+            alpha = 0.8):
 
         with rc_context(rc = self._custom_rc_params):
 
             # (1): Plot points in R3:
-            self.axes_object.scatter(x_data, y_data, z_data, color = color, marker = marker)
+            self.axes_object.scatter(
+                x_data,
+                y_data,
+                z_data,
+                color = color,
+                marker = marker,
+                alpha = alpha)
 
-    def add_surface_plot(self, x_data, y_data, z_data, colormap: str ='viridis'):
+    def add_surface_plot(
+            self,
+            x_data,
+            y_data,
+            z_data,
+            colormap: str ='viridis',
+            alpha = 1.0):
 
         with rc_context(rc = self._custom_rc_params):
 
             # (1): Plot as surface in R3:
-            self.axes_object.plot_surface(x_data, y_data, z_data, cmap = colormap, antialiased=False)
+            self.axes_object.plot_surface(
+            x_data,
+            y_data,
+            z_data,
+            cmap = colormap,
+            alpha = alpha,
+            antialiased = False)
