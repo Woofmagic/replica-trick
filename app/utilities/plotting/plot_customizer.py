@@ -254,6 +254,7 @@ class PlotCustomizer:
                 x_data,
                 y_data,
                 z_data,
+                label = label,
                 color = color,
                 marker = marker,
                 alpha = alpha)
@@ -277,9 +278,10 @@ class PlotCustomizer:
             x_data,
             y_data,
             z_data,
+            label = label,
             cmap = colormap,
             alpha = alpha,
             antialiased = False)
 
-            if label:
-                self.axes_object.legend()
+            # if label:
+            #     self.axes_object.legend()

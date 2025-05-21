@@ -56,6 +56,27 @@ import pandas as pd
 # External Library | SymPy
 import sympy as sp
 
+from matplotlib import rcParams
+
+rcParams.update({
+    'text.usetex': True,
+    'font.family': 'serif',
+    'xtick.direction': 'in',
+    'xtick.major.size': 5,
+    'xtick.major.width': 0.5,
+    'xtick.minor.size': 2.5,
+    'xtick.minor.width': 0.5,
+    'xtick.minor.visible': True,
+    'xtick.top': True,
+    'ytick.direction': 'in',
+    'ytick.major.size': 5,
+    'ytick.major.width': 0.5,
+    'ytick.minor.size': 2.5,
+    'ytick.minor.width': 0.5,
+    'ytick.minor.visible': True,
+    'ytick.right': True,
+})
+
 SETTING_VERBOSE = True
 SETTING_DEBUG = True
 LEARNING_RATE = 0.005

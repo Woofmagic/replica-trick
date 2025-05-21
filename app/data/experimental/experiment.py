@@ -18,11 +18,6 @@ from app.utilities.mathematics.sympy_function_generator import sympy_generate_ra
 
 from app.utilities.writing.latex_generation import generate_document
 
-plt.rcParams.update({
-    'text.usetex': True,
-    'font.family': "serif"
-})
-
 class ExperimentalSetup:
 
     def __init__(
@@ -387,7 +382,7 @@ class ExperimentalSetup:
         Nothing!
         """
         # (1): Set up the Figure instance
-        figure_instance = plt.figure(figsize = (18, 6))
+        figure_instance = plt.figure(figsize = (10, 5.5))
 
         if self.function_input_dimension == 1:
 
@@ -439,31 +434,25 @@ class ExperimentalSetup:
             unique_x_values = np.unique(all_x_values)
             unique_y_values = np.unique(all_y_values)
 
-            X, Y = np.meshgrid(unique_x_values, unique_y_values)
-            Z = all_z_values.reshape(len(unique_x_values), len(unique_y_values))
+            x_surface_data, y_surface_data = np.meshgrid(unique_x_values, unique_y_values)
+            z_surface_data = all_z_values.reshape(len(unique_x_values), len(unique_y_values))
 
             # (4): Add data to the Axes Object:
             plot_customization.add_3d_scatter_plot(
                 x_data = all_x_values,
                 y_data = all_y_values,
                 z_data = all_z_values,
-                color = "black",
+                label = "Experimental Data",
+                color = "red",
                 alpha = 0.9)
             
             plot_customization.add_surface_plot(
-                x_data = X,
-                y_data = Y,
-                z_data = Z,
+                x_data = x_surface_data,
+                y_data = y_surface_data,
+                z_data = z_surface_data,
+                label = "Underlying Surface",
                 colormap = 'magma',
                 alpha = 0.5)
-            
-            # (5): Add data to the Axes Object:
-            # x_data_range = np.arange(min(self.independent_variable_values), max(self.independent_variable_values), 0.01)
-            # plot_customization.add_line_plot(
-            #     x_data_range,
-            #     underlying_function(x_data_range),
-            #     label = 'Underlying Function',
-            #     color = 'gray')
             
         # (7): Show the plot for the time being:
         figure_instance.savefig(f'E{self.experiment_name}_raw_data.png')
