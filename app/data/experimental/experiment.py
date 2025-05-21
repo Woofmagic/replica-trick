@@ -474,26 +474,59 @@ class ExperimentalSetup:
         """
 
         # (1): Set up the Figure instance
-        figure_instance = plt.figure(figsize = (18, 6))
+        figure_instance = plt.figure(figsize = (10, 5.5))
 
-        # (2): Add an Axes Object:
-        axis_instance = figure_instance.add_subplot(1, 1, 1)
-        
-        # (3): Customize the Axes Object:
-        plot_customization = PlotCustomizer(
-            axis_instance,
-            title = r"Underlying Function: $f(x) = {}$".format(sp.latex(underlying_symbolic_function)),
-            xlabel = r"$x$",
-            ylabel = r"$f(x)$")
-        
-        # (4): Construct an iterable with values to plug into the underlying function for a smooth plot:
-        x_data_range = np.arange(min(self.independent_variable_values), max(self.independent_variable_values), 0.01)
+        if self.function_input_dimension == 1:
 
-        # (5): Add a line plot for the underlying function:
-        plot_customization.add_line_plot(
-            x_data_range,
-            underlying_function(x_data_range),
-            color = 'black')
+            # (2): Add an Axes Object:
+            axis_instance = figure_instance.add_subplot(1, 1, 1)
+            
+            # (3): Customize the Axes Object:
+            plot_customization = PlotCustomizer(
+                axis_instance,
+                title = r"Underlying Function: $f(x) = {}$".format(sp.latex(underlying_symbolic_function)),
+                xlabel = r"$x$",
+                ylabel = r"$f(x)$")
+            
+            # (4): Construct an iterable with values to plug into the underlying function for a smooth plot:
+            x_data_range = np.arange(min(self.independent_variable_values), max(self.independent_variable_values), 0.01)
+
+            # (5): Add a line plot for the underlying function:
+            plot_customization.add_line_plot(
+                x_data_range,
+                underlying_function(x_data_range),
+                color = 'black')
+        
+        elif self.function_input_dimension == 2:
+
+            # (2): Add an Axes Object:
+            axis_instance = figure_instance.add_subplot(1, 1, 1, projection = "3d")
+
+            # (3): Customize the Axes Object:
+            plot_customization = PlotCustomizer(
+                axis_instance,
+                title = r"Underlying Function: $f(x) = {}$".format(sp.latex(underlying_symbolic_function)),
+                xlabel = r"$x$",
+                ylabel = r"$y$",
+                zlabel = r"$f(x, y)$",
+                grid = True)
+            
+            all_x_values = self.independent_variable_values[:, 0]
+            all_y_values = self.independent_variable_values[:, 1]
+            all_z_values = self.dependent_variable_values
+
+            unique_x_values = np.unique(all_x_values)
+            unique_y_values = np.unique(all_y_values)
+
+            x_surface_data, y_surface_data = np.meshgrid(unique_x_values, unique_y_values)
+            z_surface_data = all_z_values.reshape(len(unique_x_values), len(unique_y_values))
+            
+            plot_customization.add_surface_plot(
+                x_data = x_surface_data,
+                y_data = y_surface_data,
+                z_data = z_surface_data,
+                colormap = 'magma',
+                alpha = 0.7)
         
         # (7): Show the plot for the time being:
         figure_instance.savefig(f'underlying_function_E{self.experiment_name}.png')
