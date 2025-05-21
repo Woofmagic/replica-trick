@@ -262,6 +262,43 @@ class PlotCustomizer:
             if label:
                 self.axes_object.legend()
 
+    def add_3d_error_scatter_plot(
+            self,
+            x_data,
+            y_data,
+            z_data,
+            z_error,
+            label: str = "",
+            color: str = "red",
+            errorbar_color: str = "black",
+            marker = 'o',
+            alpha = 0.8,
+            errorbar_alpha = 0.5):
+
+        with rc_context(rc = self._custom_rc_params):
+
+            # (1): Plot points in R3:
+            self.axes_object.plot(
+                x_data,
+                y_data,
+                z_data,
+                label = label,
+                color = color,
+                marker = marker,
+                alpha = alpha)
+            
+            for x_point, y_point, z_point, z_error in zip(x_data, y_data, z_data, z_error):
+                self.axes_object.plot(
+                    [x_point, x_point],
+                    [y_point, y_point],
+                    [z_point - z_error, z_point + z_error],
+                    color = errorbar_color,
+                    alpha = errorbar_alpha
+                )
+            
+            if label:
+                self.axes_object.legend()
+
     def add_surface_plot(
             self,
             x_data,
