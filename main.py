@@ -87,7 +87,7 @@ LEARNING_RATE_PATIENCE = 20
 MODIFY_LR_FACTOR = 0.9
 SETTING_DNN_TRAINING_VERBOSE = 1
 
-NUMBER_OF_REPLICAS = 10
+NUMBER_OF_REPLICAS = 1
 EPOCHS = 1000
 
 _SEARCH_SPACE_BINARY_OPERATORS = [
@@ -435,7 +435,7 @@ def run():
             print(f'Validation Loss: {validaton_loss:.4f}, Validation MAE: {validation_mae:.4f}')
 
         # (X):
-        model_predictions = tensorflow_network.predict(training_x_data)
+        model_predictions = np.array(tensorflow_network.predict(training_x_data))
 
         try:
             tensorflow_network.save(f"{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/data/replicas/replica_number_{replica_index + 1}_v{_version_number}.keras")
@@ -542,7 +542,8 @@ def run():
                 title = "Fitting Procedure",
                 xlabel = r"$x_1$",
                 ylabel = r"$x_0, :2$",
-                zlabel = r"$f(x_1, x_2$)")
+                zlabel = r"$f(x_1, x_2$)",
+                grid = True)
 
             # (4): Add data to the Axes Object:
             plot_customization_data_comparison.add_3d_error_scatter_plot(
@@ -555,9 +556,9 @@ def run():
                 alpha = 0.8)
             
             plot_customization_data_comparison.add_3d_scatter_plot(
-                x_data = model_predictions[0, :],
-                y_data = model_predictions[1, :],
-                z_data = model_predictions[2, :],
+                x_data = experimental_x_data[:, 0],
+                y_data = experimental_x_data[:, 1],
+                z_data = model_predictions.flatten(),
                 label = 'Model Predictions',
                 color = "blue",
                 alpha = 0.5)
@@ -578,8 +579,6 @@ def run():
     training_x_data = raw_data[independent_variable_dataframe_columns]
     training_y_data = raw_data['y']
     y_error_data = raw_data['y_error']
-
-    print(training_x_data)
 
     def predict_with_models(models, x_values):
         x_values = np.array(x_values)
