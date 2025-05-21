@@ -422,9 +422,9 @@ class ExperimentalSetup:
             plot_customization = PlotCustomizer(
                 axis_instance,
                 title = f"E{self.experiment_name} Raw Data",
-                xlabel = r"$x$",
-                ylabel = r"$y$",
-                zlabel = r"$f(x, y)$",
+                xlabel = r"$x_1$",
+                ylabel = r"$x_2$",
+                zlabel = r"$f(x_1, x_2)$",
                 grid = True)
             
             all_x_values = self.independent_variable_values[:, 0]
@@ -506,9 +506,9 @@ class ExperimentalSetup:
             plot_customization = PlotCustomizer(
                 axis_instance,
                 title = r"Underlying Function: $f(x) = {}$".format(sp.latex(underlying_symbolic_function)),
-                xlabel = r"$x$",
-                ylabel = r"$y$",
-                zlabel = r"$f(x, y)$",
+                xlabel = r"$x_1$",
+                ylabel = r"$x_2$",
+                zlabel = r"$f(x_1, x_2)$",
                 grid = True)
             
             all_x_values = self.independent_variable_values[:, 0]
