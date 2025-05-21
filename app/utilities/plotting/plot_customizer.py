@@ -267,7 +267,7 @@ class PlotCustomizer:
             x_data,
             y_data,
             z_data,
-            z_error,
+            z_errors,
             label: str = "",
             color: str = "red",
             errorbar_color: str = "black",
@@ -278,16 +278,16 @@ class PlotCustomizer:
         with rc_context(rc = self._custom_rc_params):
 
             # (1): Plot points in R3:
-            self.axes_object.plot(
+            self.axes_object.scatter(
                 x_data,
                 y_data,
                 z_data,
-                label = label,
+                # label = label,
                 color = color,
                 marker = marker,
                 alpha = alpha)
             
-            for x_point, y_point, z_point, z_error in zip(x_data, y_data, z_data, z_error):
+            for x_point, y_point, z_point, z_error in zip(x_data, y_data, z_data, z_errors):
                 self.axes_object.plot(
                     [x_point, x_point],
                     [y_point, y_point],

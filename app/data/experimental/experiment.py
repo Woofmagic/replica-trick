@@ -434,8 +434,13 @@ class ExperimentalSetup:
             unique_x_values = np.unique(all_x_values)
             unique_y_values = np.unique(all_y_values)
 
-            x_surface_data, y_surface_data = np.meshgrid(unique_x_values, unique_y_values)
-            z_surface_data = all_z_values.reshape(len(unique_x_values), len(unique_y_values))
+            x_surface_data, y_surface_data = np.meshgrid(
+                unique_x_values, 
+                unique_y_values,
+                indexing = "ij")
+            z_surface_data = all_z_values.reshape(
+                len(unique_x_values),
+                len(unique_y_values))
 
             # (4): Add data to the Axes Object:
             plot_customization.add_3d_scatter_plot(

@@ -87,7 +87,7 @@ LEARNING_RATE_PATIENCE = 20
 MODIFY_LR_FACTOR = 0.9
 SETTING_DNN_TRAINING_VERBOSE = 1
 
-NUMBER_OF_REPLICAS = 1
+NUMBER_OF_REPLICAS = 10
 EPOCHS = 1000
 
 _SEARCH_SPACE_BINARY_OPERATORS = [
@@ -310,7 +310,7 @@ def run():
             y_data = pseudodata_dataframe['y'],
             y_error_data = pseudodata_dataframe['y_pseudodata'],
             split_percentage = 0.2)
-        
+
         # (X): TEMPORARY!
         function_input_dimension = 2
 
@@ -534,28 +534,27 @@ def run():
         elif function_input_dimension == 2:
 
             # (2): Add an Axes Object:
-            axis_instance = figure_instance_fitting.add_subplot(1, 1, 1, projection = "3d")
+            axis_instance_fitting = figure_instance_fitting.add_subplot(1, 1, 1, projection = "3d")
 
             # (3): Customize the Axes Object:
             plot_customization_data_comparison = PlotCustomizer(
                 axis_instance_fitting,
                 title = "Fitting Procedure",
                 xlabel = r"$x_1$",
-                ylabel = r"$x_2$",
+                ylabel = r"$x_0, :2$",
                 zlabel = r"$f(x_1, x_2$)")
 
             # (4): Add data to the Axes Object:
-            plot_customization.add_3d_error_scatter_plot(
-                x_data = experimental_x_data['x_1'],
-                y_data = experimental_x_data['x_2'],
-                z_data = pseudodata_dataframe['y_pseudodata'],
-                z_lower_errorbars = experimental_y_error_data,
-                z_upper_error_bars = experimental_y_error_data,
+            plot_customization_data_comparison.add_3d_error_scatter_plot(
+                x_data = experimental_x_data[:, 0],
+                y_data = experimental_x_data[:, 1],
+                z_data = experimental_y_data,
+                z_errors = experimental_y_error_data,
                 label = "Experimental Data",
                 color = "red",
                 alpha = 0.8)
             
-            plot_customization.add_3d_scatter_plot(
+            plot_customization_data_comparison.add_3d_scatter_plot(
                 x_data = model_predictions[0, :],
                 y_data = model_predictions[1, :],
                 z_data = model_predictions[2, :],
@@ -576,14 +575,21 @@ def run():
     print(f"> Obtained {len(models)} models!")
 
     raw_data = pd.read_csv(f"E{_version_number}_raw_data.csv")
-    training_x_data = raw_data['x']
+    training_x_data = raw_data[independent_variable_dataframe_columns]
     training_y_data = raw_data['y']
     y_error_data = raw_data['y_error']
 
+    print(training_x_data)
+
     def predict_with_models(models, x_values):
-        x_values = np.array(x_values).reshape(-1, 1)
+        x_values = np.array(x_values)
+
+        if x_values.ndim == 1:
+            x_values = x_values.reshape(-1, 1)
         
-        all_predictions = np.array([model.predict(x_values).flatten() for model in models])
+        all_predictions = np.array([
+            model.predict(x_values).flatten() for model in models
+            ])
 
         y_mean = np.mean(all_predictions, axis = 0)
         y_min = np.min(all_predictions, axis = 0)
@@ -606,72 +612,134 @@ def run():
     y_mean, y_min, y_max, y_q1, y_q3, y_percentile_10, y_percentile_20, y_percentile_30, y_percentile_40, y_median, y_percentile_60, y_percentile_70, y_percentile_80, y_percentile_90 = predict_with_models(models, training_x_data)
 
     # (1): Set up the Figure instance
-    figure_instance_predictions = plt.figure(figsize = (18, 6))
+    figure_instance_predictions = plt.figure(figsize = (10, 5.5))
 
-    # (2): Add an Axes Object:
-    axis_instance_predictions = figure_instance_predictions.add_subplot(1, 1, 1)
-    
-    plot_customization_predictions = PlotCustomizer(
-        axis_instance_predictions,
-        title = rf"Replica Average for $N = {NUMBER_OF_REPLICAS}$",
-        xlabel = r"$x$",
-        ylabel = r"$f(x)$")
-    
-    plot_customization_predictions.add_line_plot(
-        x_data = training_x_data,
-        y_data = y_mean,
-        label = r'Replica Average',
-        color = "blue",
-        linestyle = "-")
-    
-    plot_customization_predictions.add_fill_between_plot(
-        x_data = training_x_data,
-        lower_y_data = y_min,
-        upper_y_data = y_max,
-        label = r'Min/Max Bound',
-        color = "lightgray",
-        alpha = 0.2)
-    
-    plot_customization_predictions.add_fill_between_plot(
-        x_data = training_x_data,
-        lower_y_data = y_percentile_10,
-        upper_y_data = y_percentile_90,
-        label = r'10/90 Bound',
-        color = "gray",
-        alpha = 0.25)
+    if function_input_dimension == 1:
 
-    plot_customization_predictions.add_fill_between_plot(
-        x_data = training_x_data,
-        lower_y_data = y_percentile_20,
-        upper_y_data = y_percentile_80,
-        label = r'20/80 Bound',
-        color = "gray",
-        alpha = 0.3)
-    
-    plot_customization_predictions.add_fill_between_plot(
-        x_data = training_x_data,
-        lower_y_data = y_percentile_30,
-        upper_y_data = y_percentile_70,
-        label = r'30/70 Bound',
-        color = "gray",
-        alpha = 0.35)
-    
-    plot_customization_predictions.add_fill_between_plot(
-        x_data = training_x_data,
-        lower_y_data = y_percentile_40,
-        upper_y_data = y_percentile_60,
-        label = r'40/60 Bound',
-        color = "gray",
-        alpha = 0.4)
-    
-    plot_customization_predictions.add_scatter_plot(
+        # (2): Add an Axes Object:
+        axis_instance_predictions = figure_instance_predictions.add_subplot(1, 1, 1)
+        
+        plot_customization_predictions = PlotCustomizer(
+            axis_instance_predictions,
+            title = rf"Replica Average for $N = {NUMBER_OF_REPLICAS}$",
+            xlabel = r"$x$",
+            ylabel = r"$f(x)$")
+        
+        plot_customization_predictions.add_line_plot(
             x_data = training_x_data,
-            y_data = training_y_data,
-            label = r'Experimental Data',
-            color = "red",
-            marker = 'o',
-            markersize = 1.)
-    
+            y_data = y_mean,
+            label = r'Replica Average',
+            color = "blue",
+            linestyle = "-")
+        
+        plot_customization_predictions.add_fill_between_plot(
+            x_data = training_x_data,
+            lower_y_data = y_min,
+            upper_y_data = y_max,
+            label = r'Min/Max Bound',
+            color = "lightgray",
+            alpha = 0.2)
+        
+        plot_customization_predictions.add_fill_between_plot(
+            x_data = training_x_data,
+            lower_y_data = y_percentile_10,
+            upper_y_data = y_percentile_90,
+            label = r'10/90 Bound',
+            color = "gray",
+            alpha = 0.25)
+
+        plot_customization_predictions.add_fill_between_plot(
+            x_data = training_x_data,
+            lower_y_data = y_percentile_20,
+            upper_y_data = y_percentile_80,
+            label = r'20/80 Bound',
+            color = "gray",
+            alpha = 0.3)
+        
+        plot_customization_predictions.add_fill_between_plot(
+            x_data = training_x_data,
+            lower_y_data = y_percentile_30,
+            upper_y_data = y_percentile_70,
+            label = r'30/70 Bound',
+            color = "gray",
+            alpha = 0.35)
+        
+        plot_customization_predictions.add_fill_between_plot(
+            x_data = training_x_data,
+            lower_y_data = y_percentile_40,
+            upper_y_data = y_percentile_60,
+            label = r'40/60 Bound',
+            color = "gray",
+            alpha = 0.4)
+        
+        plot_customization_predictions.add_scatter_plot(
+                x_data = training_x_data,
+                y_data = training_y_data,
+                label = r'Experimental Data',
+                color = "red",
+                marker = 'o',
+                markersize = 1.)
+        
+    elif function_input_dimension == 2:
+
+        # (2): Add an Axes Object:
+        axis_instance_predictions = figure_instance_predictions.add_subplot(1, 1, 1, projection = '3d')
+        
+        plot_customization_predictions = PlotCustomizer(
+            axis_instance_predictions,
+            title = rf"Replica Average for $N = {NUMBER_OF_REPLICAS}$",
+            xlabel = r"$x_1$",
+            ylabel = r"$x_2$",
+            zlabel = r"$f(x_1, x_2)$",
+            grid = True)
+        
+        training_x_grid_data, training_y_grid_data = np.meshgrid(
+            np.sort(training_x_data['x_1'].unique()),
+            np.sort(training_x_data['x_2'].unique()),
+            indexing = "ij"
+        )
+        
+        plot_customization_predictions.add_surface_plot(
+            x_data = training_x_grid_data,
+            y_data = training_y_grid_data,
+            z_data = y_mean.reshape(
+                len(training_x_data['x_1'].unique()),
+                len(training_x_data['x_2'].unique())
+            ),
+            label = r'Replica Average',
+            colormap = "inferno",
+            alpha = 0.7)
+        
+        plot_customization_predictions.add_surface_plot(
+            x_data = training_x_grid_data,
+            y_data = training_y_grid_data,
+            z_data = y_percentile_10.reshape(
+                len(training_x_data['x_1'].unique()),
+                len(training_x_data['x_2'].unique())
+            ),
+            label = r'10th Percentile Bound',
+            colormap = "gray",
+            alpha = 0.3)
+        
+        plot_customization_predictions.add_surface_plot(
+            x_data = training_x_grid_data,
+            y_data = training_y_grid_data,
+            z_data = y_percentile_90.reshape(
+                len(training_x_data['x_1'].unique()),
+                len(training_x_data['x_2'].unique())
+            ),
+            label = r'90th Percentile Bound',
+            colormap = "gray",
+            alpha = 0.3)
+        
+        plot_customization_predictions.add_3d_error_scatter_plot(
+                x_data = experimental_x_data[:, 0],
+                y_data = experimental_x_data[:, 1],
+                z_data = experimental_y_data,
+                z_errors = experimental_y_error_data,
+                color = "red",
+                alpha = 0.8)
+        
     figure_instance_predictions.savefig(
         fname = f"{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/plots/performance/replica_average_data_v{_version_number}")
     plt.close()
