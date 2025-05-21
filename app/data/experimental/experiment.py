@@ -447,14 +447,15 @@ class ExperimentalSetup:
                 x_data = all_x_values,
                 y_data = all_y_values,
                 z_data = all_z_values,
-                color = "black")
+                color = "black",
+                alpha = 0.9)
             
             plot_customization.add_surface_plot(
                 x_data = X,
                 y_data = Y,
                 z_data = Z,
                 colormap = 'magma',
-                alpha = 0.4)
+                alpha = 0.5)
             
             # (5): Add data to the Axes Object:
             # x_data_range = np.arange(min(self.independent_variable_values), max(self.independent_variable_values), 0.01)

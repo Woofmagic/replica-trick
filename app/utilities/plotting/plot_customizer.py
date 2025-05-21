@@ -242,7 +242,8 @@ class PlotCustomizer:
             x_data,
             y_data,
             z_data,
-            color = None,
+            label: str = "",
+            color: str = None,
             marker = 'o',
             alpha = 0.8):
 
@@ -256,12 +257,16 @@ class PlotCustomizer:
                 color = color,
                 marker = marker,
                 alpha = alpha)
+            
+            if label:
+                self.axes_object.legend()
 
     def add_surface_plot(
             self,
             x_data,
             y_data,
             z_data,
+            label: str = "",
             colormap: str ='viridis',
             alpha = 1.0):
 
@@ -275,3 +280,6 @@ class PlotCustomizer:
             cmap = colormap,
             alpha = alpha,
             antialiased = False)
+
+            if label:
+                self.axes_object.legend()
