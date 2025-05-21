@@ -373,6 +373,9 @@ def run():
                 label = "Generated Pseudodata",
                 color = "orange",
                 alpha = 0.8)
+            
+        else:
+            raise NotImplementedError("> Functions of n > 2 independent variables are currently unavailable for analysis!")
         
         figure_instance_pseudodata.savefig(
             fname = f"{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/plots/pseudodata/generated_pseudodata_replica_{replica_index + 1}_v{_version_number}.png")
@@ -453,16 +456,16 @@ def run():
             print(f"> Replica job finished in {end_time_in_milliseconds - start_time_in_milliseconds}ms.")
         
         # (1): Set up the Figure instance
-        figure_instance_nn_loss = plt.figure(figsize = (18, 6))
+        figure_instance_nn_loss = plt.figure(figsize = (10, 5.5))
 
         # (2): Add an Axes Object:
         axis_instance_nn_loss = figure_instance_nn_loss.add_subplot(1, 1, 1)
         
         plot_customization_nn_loss = PlotCustomizer(
             axis_instance_nn_loss,
-            title = r"Neural Network Loss per Epoch",
-            xlabel = r"Epoch",
-            ylabel = r"Loss (MSE)")
+            title = "Neural Network Loss per Epoch",
+            xlabel = "Epoch",
+            ylabel = "Loss (MSE)")
         
         plot_customization_nn_loss.add_line_plot(
             x_data = np.arange(0, EPOCHS, 1),
@@ -489,31 +492,79 @@ def run():
             linestyle = ':')
         
         # (1): Set up the Figure instance
-        figure_instance_fitting = plt.figure(figsize = (18, 6))
-
-        # (2): Add an Axes Object:
-        axis_instance_fitting = figure_instance_fitting.add_subplot(1, 1, 1)
+        figure_instance_fitting = plt.figure(figsize = (10, 5.5))
         
-        plot_customization_data_comparison = PlotCustomizer(
-            axis_instance_fitting,
-            title = r"Fitting Procedure",
-            xlabel = r"x",
-            ylabel = r"f(x)")
+        if function_input_dimension == 1:
 
-        plot_customization_data_comparison.add_errorbar_plot(
-            x_data = experimental_x_data,
-            y_data = experimental_y_data,
-            x_errorbars = np.array([0.]),
-            y_errorbars = experimental_y_error_data,
-            label = r'Experimental Data',
-            color = 'red')
+            # (2): Add an Axes Object:
+            axis_instance_fitting = figure_instance_fitting.add_subplot(1, 1, 1)
         
-        plot_customization_data_comparison.add_scatter_plot(
-            x_data = training_x_data,
-            y_data = model_predictions,
-            label = r'Model Predictions',
-            color = "blue",
-            markersize = 4.)
+            # (3): Customize the Axes Object:
+            plot_customization_data_comparison = PlotCustomizer(
+                axis_instance_fitting,
+                title = "Fitting Procedure",
+                xlabel = r"$x$",
+                ylabel = r"$f(x)$")
+            
+            # (4): Add data to the Axes Object:
+            plot_customization_data_comparison.add_errorbar_plot(
+                x_data = experimental_x_data,
+                y_data = experimental_y_data,
+                x_errorbars = np.array([0.]),
+                y_errorbars = experimental_y_error_data,
+                label = 'Experimental Data',
+                color = 'red')
+            
+            plot_customization_data_comparison.add_errorbar_plot(
+                x_data = pseudodata_dataframe['x_1'],
+                y_data = pseudodata_dataframe['y_pseudodata'],
+                x_errorbars = np.zeros(pseudodata_dataframe['y_pseudodata'].shape),
+                y_errorbars = np.zeros(pseudodata_dataframe['y_pseudodata'].shape),
+                label = 'Replica Pseudodata',
+                color = "orange")
+            
+            # (5): Add data to the Axes Object:
+            plot_customization_data_comparison.add_scatter_plot(
+                x_data = training_x_data,
+                y_data = model_predictions,
+                label = 'Model Predictions',
+                color = "blue",
+                markersize = 4.)
+            
+        elif function_input_dimension == 2:
+
+            # (2): Add an Axes Object:
+            axis_instance = figure_instance_fitting.add_subplot(1, 1, 1, projection = "3d")
+
+            # (3): Customize the Axes Object:
+            plot_customization_data_comparison = PlotCustomizer(
+                axis_instance_fitting,
+                title = "Fitting Procedure",
+                xlabel = r"$x_1$",
+                ylabel = r"$x_2$",
+                zlabel = r"$f(x_1, x_2$)")
+
+            # (4): Add data to the Axes Object:
+            plot_customization.add_3d_error_scatter_plot(
+                x_data = experimental_x_data['x_1'],
+                y_data = experimental_x_data['x_2'],
+                z_data = pseudodata_dataframe['y_pseudodata'],
+                z_lower_errorbars = experimental_y_error_data,
+                z_upper_error_bars = experimental_y_error_data,
+                label = "Experimental Data",
+                color = "red",
+                alpha = 0.8)
+            
+            plot_customization.add_3d_scatter_plot(
+                x_data = model_predictions[0, :],
+                y_data = model_predictions[1, :],
+                z_data = model_predictions[2, :],
+                label = 'Model Predictions',
+                color = "blue",
+                alpha = 0.5)
+            
+        else:
+            raise NotImplementedError("> Functions of n > 2 independent variables are currently unavailable for analysis!")
         
         figure_instance_nn_loss.savefig(f"{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/plots/losses/loss_v{replica_index+1}_v{_version_number}.png")
         figure_instance_fitting.savefig(f"{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/plots/fits/fitting_replica_{replica_index+1}_v{_version_number}.png")
