@@ -93,7 +93,7 @@ class ExperimentalSetup:
             ]
 
             # (X): Make meshgrid by unpacking the array we made earlier:
-            meshgrid = np.meshgrid(*axis_values, indexing='ij')
+            meshgrid = np.meshgrid(*axis_values, indexing = 'ij')
 
             # (X): Stack the meshgrid arrays
             grid_points = np.stack(meshgrid, axis = -1).reshape(-1, self.function_input_dimension)
@@ -102,7 +102,9 @@ class ExperimentalSetup:
             if grid_points.shape[0] > self.number_of_data_points:
 
                 # (X): ... we trim the array:
-                independent_variable_values = grid_points[:self.number_of_data_points]
+                grid_points = grid_points[:self.number_of_data_points]
+
+            independent_variable_values = grid_points
 
         # (X): Return the array:
         return independent_variable_values
@@ -224,7 +226,12 @@ class ExperimentalSetup:
             self.independent_variable_values = self._generate_nonuniform_x_values()
 
         # (2): Perform the plug-and-chugging of x into the generated f(x) as the first step:
-        self.pure_experimental_values = self.underlying_function(self.independent_variable_values)
+        if self.function_input_dimension == 1:
+            self.pure_experimental_values = self.underlying_function(self.independent_variable_values)
+
+        else:
+            transposed_inputs = self.independent_variable_values.T
+            self.pure_experimental_values = self.underlying_function(*transposed_inputs)
 
         # (3): Generate systematic shift
         systematic_shift = np.random.normal(0, self._SYSTEMATIC_SHIFT_STD, size = len(self.pure_experimental_values))
@@ -297,7 +304,7 @@ class ExperimentalSetup:
         if input_space_dimension == 1:
             
             # (X): Set up the Figure instance
-            figure_instance, axis_instance = plt.subplots(figsize = (10, 2))
+            figure_instance, axis_instance = plt.subplots(figsize = (12, 5))
         
             # (X): Customize the Axes Object:
             plot_customization = PlotCustomizer(
@@ -311,7 +318,7 @@ class ExperimentalSetup:
                 x_data = x_data.flatten(),
                 y_data = np.zeros_like(x_data),
                 color = 'blue',
-                markersize = 40)
+                markersize = 7)
             
             # (X): Save the figure:
             figure_instance.savefig(f'E{self.experiment_name}_input_space.png')
@@ -319,7 +326,7 @@ class ExperimentalSetup:
         elif input_space_dimension == 2:
             
             # (X): Set up the Figure instance
-            figure_instance, axis_instance = plt.subplots(figsize = (6, 6))
+            figure_instance, axis_instance = plt.subplots(figsize = (8, 6))
         
             # (X): Customize the Axes Object:
             plot_customization = PlotCustomizer(
@@ -333,7 +340,7 @@ class ExperimentalSetup:
                 x_data = x_data[:, 0],
                 y_data = x_data[:, 1],
                 color = 'blue',
-                markersize = 40)
+                markersize = 7)
             
             # (X): Save the figure:
             figure_instance.savefig(f'E{self.experiment_name}_input_space.png')
@@ -382,33 +389,81 @@ class ExperimentalSetup:
         # (1): Set up the Figure instance
         figure_instance = plt.figure(figsize = (18, 6))
 
-        # (2): Add an Axes Object:
-        axis_instance = figure_instance.add_subplot(1, 1, 1)
+        if self.function_input_dimension == 1:
+
+            # (2): Add an Axes Object:
+            axis_instance = figure_instance.add_subplot(1, 1, 1)
         
-        # (3): Customize the Axes Object:
-        plot_customization = PlotCustomizer(
-            axis_instance,
-            title = f"E{self.experiment_name} Raw Data",
-            xlabel = r"$x$",
-            ylabel = r"$f(x)$")
+            # (3): Customize the Axes Object:
+            plot_customization = PlotCustomizer(
+                axis_instance,
+                title = f"E{self.experiment_name} Raw Data",
+                xlabel = r"$x$",
+                ylabel = r"$f(x)$")
+            
+            # (4): Add data to the Axes Object:
+            plot_customization.add_errorbar_plot(
+                x_data = self.independent_variable_values,
+                y_data = self.dependent_variable_values,
+                x_errorbars = np.array([0.]),
+                y_errorbars =  self.experimental_errors,
+                label = r'Experimental Data',
+                color = 'red')
+            
+            # (5): Add data to the Axes Object:
+            x_data_range = np.arange(min(self.independent_variable_values), max(self.independent_variable_values), 0.01)
+            plot_customization.add_line_plot(
+                x_data_range,
+                underlying_function(x_data_range),
+                label = 'Underlying Function',
+                color = 'gray')
         
-        # (4): Add data to the Axes Object:
-        plot_customization.add_errorbar_plot(
-            x_data = self.independent_variable_values,
-            y_data = self.dependent_variable_values,
-            x_errorbars = np.array([0.]),
-            y_errorbars =  self.experimental_errors,
-            label = r'Experimental Data',
-            color = 'red')
-        
-        # (5): Add data to the Axes Object:
-        x_data_range = np.arange(min(self.independent_variable_values), max(self.independent_variable_values), 0.01)
-        plot_customization.add_line_plot(
-            x_data_range, 
-            underlying_function(x_data_range),
-            label = 'Underlying Function',
-            color = 'gray')
-        
+        elif self.function_input_dimension == 2:
+
+            # (2): Add an Axes Object:
+            axis_instance = figure_instance.add_subplot(1, 1, 1, projection = "3d")
+
+            # (3): Customize the Axes Object:
+            plot_customization = PlotCustomizer(
+                axis_instance,
+                title = f"E{self.experiment_name} Raw Data",
+                xlabel = r"$x$",
+                ylabel = r"$y$",
+                zlabel = r"$f(x, y)$",
+                grid = True)
+            
+            all_x_values = self.independent_variable_values[:, 0]
+            all_y_values = self.independent_variable_values[:, 1]
+            all_z_values = self.dependent_variable_values
+
+            unique_x_values = np.unique(all_x_values)
+            unique_y_values = np.unique(all_y_values)
+
+            X, Y = np.meshgrid(unique_x_values, unique_y_values)
+            Z = all_z_values.reshape(len(unique_x_values), len(unique_y_values))
+
+            # (4): Add data to the Axes Object:
+            plot_customization.add_3d_scatter_plot(
+                x_data = all_x_values,
+                y_data = all_y_values,
+                z_data = all_z_values,
+                color = "black")
+            
+            plot_customization.add_surface_plot(
+                x_data = X,
+                y_data = Y,
+                z_data = Z,
+                colormap = 'magma',
+                alpha = 0.4)
+            
+            # (5): Add data to the Axes Object:
+            # x_data_range = np.arange(min(self.independent_variable_values), max(self.independent_variable_values), 0.01)
+            # plot_customization.add_line_plot(
+            #     x_data_range,
+            #     underlying_function(x_data_range),
+            #     label = 'Underlying Function',
+            #     color = 'gray')
+            
         # (7): Show the plot for the time being:
         figure_instance.savefig(f'E{self.experiment_name}_raw_data.png')
 
@@ -470,7 +525,7 @@ def conduct_experiment(experiment_name: str):
     """
     
     # (1): We need to determine the numebr of independent variables of the unknown functin:
-    function_input_dimensionality = 1
+    function_input_dimensionality = 2
 
     # (2): We need to determine number of outputs of our unknown function:
     function_output_dimensionality = 1
@@ -518,7 +573,7 @@ def conduct_experiment(experiment_name: str):
     underlying_function = sympy_lambdify_expression(sympy_symbols, underlying_symbolic_function)
 
     # (1): First, we determine how robust and serious our experiment is:
-    number_of_data_points = 11
+    number_of_data_points = 100
 
     # (6): Finally, we set up the Experiment:
     experiment_instance = ExperimentalSetup(

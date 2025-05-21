@@ -2,11 +2,11 @@ from matplotlib.pyplot import Axes, rc_context
 
 class PlotCustomizer:
     def __init__(
-            self, 
-            axes: Axes, 
-            title: str = "", 
-            xlabel: str = "", 
-            ylabel: str = "", 
+            self,
+            axes: Axes,
+            title: str = "",
+            xlabel: str = "",
+            ylabel: str = "",
             zlabel: str = "",
             xlim = None,
             ylim = None,
@@ -14,8 +14,9 @@ class PlotCustomizer:
             grid: bool = False):
         
         self._custom_rc_params = {
+            'text.usetex': True,
             'font.family': 'serif',
-            'mathtext.fontset': 'cm', # https://matplotlib.org/stable/gallery/text_labels_and_annotations/mathtext_fontfamily_example.html
+            # 'mathtext.fontset': 'cm', # https://matplotlib.org/stable/gallery/text_labels_and_annotations/mathtext_fontfamily_example.html
             'xtick.direction': 'in',
             'xtick.major.size': 5,
             'xtick.major.width': 0.5,
@@ -240,9 +241,9 @@ class PlotCustomizer:
             # (1): Plot points in R3:
             self.axes_object.scatter(x_data, y_data, z_data, color = color, marker = marker)
 
-    def add_surface_plot(self, X, Y, Z, colormap: str ='viridis'):
+    def add_surface_plot(self, x_data, y_data, z_data, colormap: str ='viridis'):
 
         with rc_context(rc = self._custom_rc_params):
 
             # (1): Plot as surface in R3:
-            self.axes_object.plot_surface(X, Y, Z, cmap = colormap, antialiased=False)
+            self.axes_object.plot_surface(x_data, y_data, z_data, cmap = colormap, antialiased=False)

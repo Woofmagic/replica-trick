@@ -291,7 +291,7 @@ def sympy_generate_random_function(
     final_expression = available_expressions[-1]
 
     # (X): "set quotient" (?) to determine if the loop missed any independent variables:
-    unused_variable = set(sympy_symbols) - used_independent_variables   
+    unused_variable = set(sympy_symbols) - used_independent_variables
 
     # (X): If there *are* unused variables:
     if unused_variable is not None:
@@ -302,6 +302,10 @@ def sympy_generate_random_function(
             # (X): ...and force their inclusion into the final expression:
             final_expression += unused_variable
 
+    # Gaussian:
+    # underlying_symbolic_function = sp.exp(- (available_expressions[0] - 0.145)**2 / (0.214)**2) / (0.214 * sp.sqrt(2. * sp.pi))
+    # return underlying_symbolic_function
+    print(final_expression)
     return final_expression
 
 def sympy_lambdify_expression(
