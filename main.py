@@ -290,6 +290,7 @@ def run():
         this_replica_data_set = pd.read_csv(DATA_FILE_NAME)
 
         # (X): For every replica, we generate associated replica data using `generate_replica_data`:
+        # - this works even for n > 1 (right now), but ONLY for when there is *one* output y value!
         pseudodata_dataframe = generate_replica_data(
             pandas_dataframe = this_replica_data_set,
             mean_value_column_name = 'y',
@@ -302,44 +303,83 @@ def run():
             index_label = None)
 
         # (X): Partition the replica data into training and testing data:
+        independent_variable_dataframe_columns = [column for column in pseudodata_dataframe.columns if column.startswith("x_")]
+
         training_x_data, testing_x_data, training_y_data, testing_y_data, training_y_error, testing_y_error = split_data(
-            x_data = pseudodata_dataframe['x'],
+            x_data = pseudodata_dataframe[independent_variable_dataframe_columns],
             y_data = pseudodata_dataframe['y'],
             y_error_data = pseudodata_dataframe['y_pseudodata'],
             split_percentage = 0.2)
         
-        # (1): Set up the Figure instance
-        figure_instance_pseudodata = plt.figure(figsize = (18, 6))
+        # (X): TEMPORARY!
+        function_input_dimension = 2
 
-        # (2): Add an Axes Object:
-        axis_instance_pseudodata = figure_instance_pseudodata.add_subplot(1, 1, 1)
+        figure_instance_pseudodata = plt.figure(figsize = (10, 5.5))
         
-        plot_customization_predictions = PlotCustomizer(
-            axis_instance_pseudodata,
-            title = rf"Pseudodata Generation for Replica ${replica_index + 1}$",
-            xlabel = r"$x$",
-            ylabel = r"$y\left(x\right)$")
+        if function_input_dimension == 1:
+
+            # (2): Add an Axes Object:
+            axis_instance_pseudodata = figure_instance_pseudodata.add_subplot(1, 1, 1)
+            
+            plot_customizer_psueodata = PlotCustomizer(
+                axis_instance_pseudodata,
+                title = rf"Pseudodata Generation for Replica ${replica_index + 1}$",
+                xlabel = r"$x$",
+                ylabel = r"$y\left(x\right)$")
+            
+            plot_customizer_psueodata.add_errorbar_plot(
+                x_data = this_replica_data_set['x_1'],
+                y_data = this_replica_data_set['y'],
+                x_errorbars = np.zeros(this_replica_data_set['x_1'].shape),
+                y_errorbars = this_replica_data_set['y_error'],
+                label = 'Raw Data',
+                color = "black",)
+            
+            plot_customizer_psueodata.add_errorbar_plot(
+                x_data = pseudodata_dataframe['x_1'],
+                y_data = pseudodata_dataframe['y_pseudodata'],
+                x_errorbars = np.zeros(pseudodata_dataframe['y_pseudodata'].shape),
+                y_errorbars = np.zeros(pseudodata_dataframe['y_pseudodata'].shape),
+                label = 'Generated Pseudodata',
+                color = "orange",)
         
-        plot_customization_predictions.add_errorbar_plot(
-            x_data = this_replica_data_set['x'],
-            y_data = this_replica_data_set['y'],
-            x_errorbars = np.zeros(this_replica_data_set['x'].shape),
-            y_errorbars = this_replica_data_set['y_error'],
-            label = r'Raw Data',
-            color = "black",)
-        
-        plot_customization_predictions.add_errorbar_plot(
-            x_data = pseudodata_dataframe['x'],
-            y_data = pseudodata_dataframe['y_pseudodata'],
-            x_errorbars = np.zeros(pseudodata_dataframe['y_pseudodata'].shape),
-            y_errorbars = np.zeros(pseudodata_dataframe['y_pseudodata'].shape),
-            label = r'Generated Pseudodata',
-            color = "orange",)
+        elif function_input_dimension == 2:
+
+            # (2): Add an Axes Object:
+            axis_instance = figure_instance_pseudodata.add_subplot(1, 1, 1, projection = "3d")
+
+            # (3): Customize the Axes Object:
+            plot_customization = PlotCustomizer(
+                axis_instance,
+                title = rf"Pseudodata Generation for Replica ${replica_index + 1}$",
+                xlabel = r"$x$",
+                ylabel = r"$y$",
+                zlabel = r"$f(x, y)$",
+                grid = True)
+
+            # (4): Add data to the Axes Object:
+            plot_customization.add_3d_scatter_plot(
+                x_data = this_replica_data_set['x_1'],
+                y_data = this_replica_data_set['x_2'],
+                z_data = this_replica_data_set['y'],
+                label = "Raw Data",
+                color = "black",
+                alpha = 0.4)
+            
+            plot_customization.add_3d_scatter_plot(
+                x_data = pseudodata_dataframe['x_1'],
+                y_data = pseudodata_dataframe['x_2'],
+                z_data = pseudodata_dataframe['y_pseudodata'],
+                label = "Generated Pseudodata",
+                color = "orange",
+                alpha = 0.8)
         
         figure_instance_pseudodata.savefig(
             fname = f"{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/plots/pseudodata/generated_pseudodata_replica_{replica_index + 1}_v{_version_number}.png")
 
-        input_x_value = Input(shape = (1, ), name = 'input_layer')
+        input_x_value = Input(
+            shape = (function_input_dimension, ),
+            name = 'input_layer')
 
         # (3): Define the Model Architecture:
         x1 = Dense(32, activation = "relu")(input_x_value)
@@ -359,7 +399,7 @@ def run():
                 tf.keras.metrics.MeanSquaredError()
                 ])
 
-        if SETTING_VERBOSE:        
+        if SETTING_VERBOSE:      
             tensorflow_network.summary()
 
         start_time_in_milliseconds = datetime.datetime.now().replace(microsecond = 0)
@@ -391,7 +431,7 @@ def run():
         if SETTING_VERBOSE:
             print(f'Validation Loss: {validaton_loss:.4f}, Validation MAE: {validation_mae:.4f}')
 
-        # (X): We are 
+        # (X):
         model_predictions = tensorflow_network.predict(training_x_data)
 
         try:
