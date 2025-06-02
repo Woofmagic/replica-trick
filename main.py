@@ -402,7 +402,7 @@ def run():
                 tf.keras.metrics.MeanSquaredError()
                 ])
 
-        if SETTING_VERBOSE:      
+        if SETTING_VERBOSE:
             tensorflow_network.summary()
 
         start_time_in_milliseconds = datetime.datetime.now().replace(microsecond = 0)
@@ -435,7 +435,8 @@ def run():
             print(f'Validation Loss: {validaton_loss:.4f}, Validation MAE: {validation_mae:.4f}')
 
         # (X):
-        model_predictions = np.array(tensorflow_network.predict(training_x_data))
+        # model_predictions = np.array(tensorflow_network.predict(training_x_data))
+        model_predictions = np.array(tensorflow_network.predict(pseudodata_dataframe[independent_variable_dataframe_columns]))
 
         try:
             tensorflow_network.save(f"{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/data/replicas/replica_number_{replica_index + 1}_v{_version_number}.keras")
@@ -491,6 +492,8 @@ def run():
             color = "limegreen",
             linestyle = ':')
         
+        figure_instance_nn_loss.savefig(f"{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/plots/losses/loss_v{replica_index+1}_v{_version_number}.png")
+
         # (1): Set up the Figure instance
         figure_instance_fitting = plt.figure(figsize = (10, 5.5))
         
@@ -566,7 +569,6 @@ def run():
         else:
             raise NotImplementedError("> Functions of n > 2 independent variables are currently unavailable for analysis!")
         
-        figure_instance_nn_loss.savefig(f"{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/plots/losses/loss_v{replica_index+1}_v{_version_number}.png")
         figure_instance_fitting.savefig(f"{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/plots/fits/fitting_replica_{replica_index+1}_v{_version_number}.png")
 
     model_paths = [os.path.join(os.getcwd(), f"app/science/analysis/version_{_version_number}/data/replicas/{file}") for file in os.listdir(f"app/science/analysis/version_{_version_number}/data/replicas") if file.endswith(".keras")]
@@ -743,86 +745,172 @@ def run():
         fname = f"{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/plots/performance/replica_average_data_v{_version_number}")
     plt.close()
 
-    py_regressor_models.fit(pd.DataFrame(training_x_data), y_mean)
+    # (X): Run the PySR fitting procedure:
+    py_regressor_models.fit(
+        X = pd.DataFrame(training_x_data),
+        y = y_mean)
     
     print(f"> Best fit model for this: {py_regressor_models.latex()}")
 
-    figure_pysr_predictions = plt.figure(figsize = (18, 6))
-    axis_instance_pysr_predictions = figure_pysr_predictions.add_subplot(1, 1, 1)
-    plot_customization_pysr_predictions = PlotCustomizer(
-        axis_instance_pysr_predictions,
-        title = fr"Replica Method Predictions for $N = {NUMBER_OF_REPLICAS}$",
-        xlabel = r"$x$",
-        ylabel = r"$f(x)$",)
-    plot_customization_pysr_predictions.add_line_plot(
-        x_data = training_x_data,
-        y_data = y_mean,
-        label = "Replica Average",
-        color = "blue",
-        linestyle = '-')
-    plot_customization_pysr_predictions.add_fill_between_plot(
-        x_data = training_x_data,
-        lower_y_data = y_q1,
-        upper_y_data = y_q3,
-        label = "IQR",
-        color = "lightgray",
-        alpha = 0.34,)
-    plot_customization_pysr_predictions.add_errorbar_plot(
-        x_data = training_x_data,
-        y_data = training_y_data,
-        x_errorbars = np.zeros(y_error_data.shape),
-        y_errorbars = y_error_data,
-        label = "Experimental Data",
-        color = "red",
-        marker = 'o',)
+    # (X): Sort the equations according to their LOSS in the PySR algorithm:
+    sorted_equations = sorted(
+        py_regressor_models.equations_.itertuples(),
+        key = lambda eq: eq.loss,
+        reverse = True)
 
-    sorted_equations = sorted(py_regressor_models.equations_.itertuples(), key=lambda eq: eq.loss, reverse=True)
-
+    # (X): We assign a list of colors for each equation in our output:
     colors = plt.cm.jet(np.linspace(0, 1, len(sorted_equations)))
 
-    for index, (equation, color) in enumerate(zip(sorted_equations, colors)):
+    figure_pysr_predictions = plt.figure(figsize = (18, 6))
 
-        equation_complexity = equation.complexity
-        equation_loss = equation.loss
-        # equation_latex = equation.sympy_format
-        simplified_equation = sp.simplify(equation.sympy_format)  # Simplify the equation
-        equation_latex = sp.latex(simplified_equation)  # Convert to LaTeX format
+    if function_input_dimension == 1:
 
-        y_pysr_mean_predictions = py_regressor_models.predict(pd.DataFrame(training_x_data), index = index)
+        axis_instance_pysr_predictions = figure_pysr_predictions.add_subplot(1, 1, 1)
 
+        plot_customization_pysr_predictions = PlotCustomizer(
+            axis_instance_pysr_predictions,
+            title = fr"Replica Method Predictions for $N = {NUMBER_OF_REPLICAS}$",
+            xlabel = r"$x$",
+            ylabel = r"$f(x)$",)
+        
         plot_customization_pysr_predictions.add_line_plot(
             x_data = training_x_data,
-            y_data = y_pysr_mean_predictions,
-            label = fr"PySR (C = {equation_complexity}) (L = {equation_loss}): $y(x) = {equation_latex}$",
-            color = color,
-            linestyle = '-',
-            alpha = 0.24,)
+            y_data = y_mean,
+            label = "Replica Average",
+            color = "blue",
+            linestyle = '-')
         
-    # axis_instance_predictions.legend(
-    #     loc = 2,
-    #     fontsize = 9,
-    #     shadow = True,
-    #     bbox_to_anchor = (1.05, 1),
-    #     borderaxespad = 0.,
-    #     frameon = True,)
+        plot_customization_pysr_predictions.add_fill_between_plot(
+            x_data = training_x_data,
+            lower_y_data = y_q1,
+            upper_y_data = y_q3,
+            label = "IQR",
+            color = "lightgray",
+            alpha = 0.34,)
+        
+        plot_customization_pysr_predictions.add_errorbar_plot(
+            x_data = training_x_data,
+            y_data = training_y_data,
+            x_errorbars = np.zeros(y_error_data.shape),
+            y_errorbars = y_error_data,
+            label = "Experimental Data",
+            color = "red",
+            marker = 'o',)
+        
+        for index, (equation, color) in enumerate(zip(sorted_equations, colors)):
+
+            # (X): Extract the equation's complexity with `.complexity`:
+            equation_complexity = equation.complexity
+
+            # (X): Extract the loss during fitting with `.loss`:
+            equation_loss = equation.loss
+
+            # (X): Simplify the equation with SymPy's simplify() applied to PySR's SymPy representation:
+            simplified_equation = sp.simplify(equation.sympy_format)
+
+            # (X): Convert the simplifed equation into LaTeX for plotting:
+            equation_latex = sp.latex(simplified_equation)
+
+            # (X): Use PySR results to predict the output:
+            y_pysr_mean_predictions = py_regressor_models.predict(
+                X = pseudodata_dataframe[independent_variable_dataframe_columns],
+                index = index)
+
+            # (X): Add a line plot for each prediction:
+            plot_customization_pysr_predictions.add_line_plot(
+                x_data = training_x_data,
+                y_data = y_pysr_mean_predictions,
+                label = fr"PySR (C = {equation_complexity}) (L = {equation_loss}): $y(x) = {equation_latex}$",
+                color = color,
+                linestyle = '-',
+                alpha = 0.24,)
+        
+    if function_input_dimension == 2:
+        
+        axis_instance_pysr_predictions = figure_pysr_predictions.add_subplot(1, 1, 1, projection = '3d')
+
+        plot_customization_pysr_predictions = PlotCustomizer(
+            axis_instance_pysr_predictions,
+            title = fr"Replica Method Predictions for $N = {NUMBER_OF_REPLICAS}$",
+            xlabel = r"$x$",
+            ylabel = r"$f(x)$",)
+        
+        plot_customization_pysr_predictions.add_surface_plot(
+            x_data = training_x_grid_data,
+            y_data = training_y_grid_data,
+            z_data = y_mean.reshape(
+                len(training_x_data['x_1'].unique()),
+                len(training_x_data['x_2'].unique())
+            ),
+            label = r'Replica Average',
+            colormap = "inferno",
+            alpha = 0.7)
+        
+        # (4): Add data to the Axes Object:
+        plot_customization_pysr_predictions.add_3d_error_scatter_plot(
+            x_data = experimental_x_data[:, 0],
+            y_data = experimental_x_data[:, 1],
+            z_data = experimental_y_data,
+            z_errors = experimental_y_error_data,
+            label = "Experimental Data",
+            color = "red",
+            alpha = 0.8)
+        
+        for index, (equation, color) in enumerate(zip(sorted_equations, colors)):
+
+            # (X): Extract the equation's complexity with `.complexity`:
+            equation_complexity = equation.complexity
+
+            # (X): Extract the loss during fitting with `.loss`:
+            equation_loss = equation.loss
+
+            # (X): Simplify the equation with SymPy's simplify() applied to PySR's SymPy representation:
+            simplified_equation = sp.simplify(equation.sympy_format)
+
+            # (X): Convert the simplifed equation into LaTeX for plotting:
+            equation_latex = sp.latex(simplified_equation)
+
+            x1_vals = np.sort(training_x_data.iloc[:, 0].unique())
+            x2_vals = np.sort(training_x_data.iloc[:, 1].unique())
+            x1_grid, x2_grid = np.meshgrid(x1_vals, x2_vals, indexing="ij")
+
+            # Build prediction surface
+            mesh_points = np.column_stack([x1_grid.ravel(), x2_grid.ravel()])
+
+            # (X): Use PySR results to predict the output:
+            y_pysr_mean_predictions = py_regressor_models.predict(
+                X = pd.DataFrame(mesh_points, columns = training_x_data.columns),
+                index = index)
+            y_pysr_mean_predictions = y_pysr_mean_predictions.reshape(x1_grid.shape)
+
+            plot_customization_pysr_predictions.add_surface_plot(
+                x_data = x1_grid,
+                y_data = x2_grid,
+                z_data = y_pysr_mean_predictions,
+                label = fr"PySR (C = {equation_complexity}) (L = {equation_loss}): $y(x_1, x_2) = {equation_latex}$",
+                colormap = "viridis",
+                alpha = 0.25)
+
 
     axis_instance_pysr_predictions.legend(
-        loc="center left",
-        fontsize=9,
-        shadow=True,
-        bbox_to_anchor=(1.05, 0.5),
-        borderaxespad=0.,
-        frameon=True
-    )
+        loc = "center left",
+        fontsize = 9,
+        shadow = True,
+        bbox_to_anchor = (1.05, 0.5),
+        borderaxespad = 0.,
+        frameon = True)
 
     plt.subplots_adjust(right=0.75)
+
     figure_pysr_predictions.tight_layout()
 
     figure_pysr_predictions.savefig(
         fname = f"{_PATH_SCIENCE_ANALYSIS}version_{_version_number}/plots/performance/replica_average_with_sr_v{_version_number}")
     plt.close()
 
-    py_regressor_models.fit(pd.DataFrame(training_x_data), y_median)
+    py_regressor_models.fit(
+        pd.DataFrame(training_x_data),
+        y_median)
     
     print(f"> Best fit model for this: {py_regressor_models.latex()}")
 
